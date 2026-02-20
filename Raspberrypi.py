@@ -3,41 +3,29 @@ import requests
 import time
 
 SERVER_URL = "https://dissuasive-osseous-ethelyn.ngrok-free.dev/upload"
-CAPTURE_INTERVAL = 5
 
 cap = cv2.VideoCapture(0)
-
-if not cap.isOpened():
-    print("Camera not detected.")
-    exit()
-
-print("Camera started...")
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 while True:
     ret, frame = cap.read()
-
     if not ret:
-        print("Capture failed.")
         continue
 
-    cv2.imwrite("capture.jpg", frame)
+    cv2.imwrite("temp.jpg", frame)
 
     try:
-        with open("capture.jpg", "rb") as img:
+        with open("temp.jpg", "rb") as f:
             response = requests.post(
                 SERVER_URL,
-                files={"image": img},
-                timeout=120
+                files={"image": f},
+                timeout=10
             )
 
-        print("Status:", response.status_code)
-
-        if response.status_code == 200:
-            print("Response:", response.json())
-        else:
-            print("Server Error:", response.text)
+        print("Response:", response.json())
 
     except Exception as e:
-        print("Request Error:", e)
+        print("Error:", e)
 
-    time.sleep(CAPTURE_INTERVAL)
+    time.sleep(2)
