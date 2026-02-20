@@ -1,337 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Student Face Verification — TransBuddy</title>
-  <style>
-    /* ── Reset & base ── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TransBuddy Bus Verification</title>
 
-    body {
-      background: #0d0d0d;
-      color: #e0e0e0;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Arial}
 
-    /* ── Header ── */
-    header {
-      width: 100%;
-      background: linear-gradient(90deg, #0f2027, #203a43, #2c5364);
-      padding: 18px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
-    }
-    header h1 {
-      font-size: 1.4rem;
-      letter-spacing: 1px;
-      color: #00e5ff;
-    }
-    #live-clock {
-      font-size: 0.95rem;
-      color: #aaa;
-    }
+body{
+  background:#0f172a;
+  color:#e2e8f0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-height:100vh;
+}
 
-    /* ── Main layout ── */
-    main {
-      width: 100%;
-      max-width: 1100px;
-      padding: 32px 20px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 28px;
-    }
-    @media (max-width: 720px) {
-      main { grid-template-columns: 1fr; }
-    }
+header{
+  width:100%;
+  padding:20px;
+  background:linear-gradient(90deg,#1e293b,#0f172a);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 3px 10px rgba(0,0,0,0.4);
+}
 
-    /* ── Cards ── */
-    .card {
-      background: #1a1a2e;
-      border-radius: 14px;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    .card-title {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #666;
-      margin-bottom: 16px;
-    }
+header h1{
+  color:#38bdf8;
+  font-size:20px;
+}
 
-    /* ── Camera feed ── */
-    #camera-card {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #live-image {
-      width: 100%;
-      max-width: 460px;
-      border-radius: 10px;
-      border: 3px solid #333;
-      transition: border-color 0.4s;
-    }
-    #live-image.valid-border   { border-color: #00e676; }
-    #live-image.invalid-border { border-color: #ff1744; }
-    #live-image.warn-border    { border-color: #ffd600; }
+#clock{
+  font-size:14px;
+  color:#94a3b8;
+}
 
-    #scan-overlay {
-      position: absolute;
-      top: 44px;
-      left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, #00e5ff, transparent);
-      animation: scan 2s linear infinite;
-      pointer-events: none;
-    }
-    @keyframes scan {
-      0%   { top: 44px; opacity: 1; }
-      90%  { opacity: 1; }
-      100% { top: calc(100% - 10px); opacity: 0; }
-    }
+main{
+  margin-top:30px;
+  width:100%;
+  max-width:1000px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:30px;
+  padding:20px;
+}
 
-    /* ── Status badge ── */
-    #status-badge {
-      margin-top: 18px;
-      padding: 12px 28px;
-      border-radius: 50px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      background: #2a2a2a;
-      transition: background 0.4s, color 0.4s;
-    }
-    #status-badge.valid            { background: #00c853; color: #fff; }
-    #status-badge.invalid_person   { background: #d50000; color: #fff; }
-    #status-badge.invalid_database { background: #ff6d00; color: #fff; }
-    #status-badge.error            { background: #6a1a4c; color: #ff80ab; }
-    #status-badge.waiting          { background: #263238; color: #90a4ae; }
+@media(max-width:800px){
+  main{grid-template-columns:1fr;}
+}
 
-    /* ── Details card ── */
-    .info-row {
-      display: flex;
-      align-items: flex-start;
-      padding: 10px 0;
-      border-bottom: 1px solid #252540;
-    }
-    .info-row:last-child { border-bottom: none; }
-    .info-label {
-      width: 140px;
-      font-size: 0.8rem;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      flex-shrink: 0;
-    }
-    .info-value {
-      font-size: 0.95rem;
-      color: #e0e0e0;
-      word-break: break-all;
-    }
-    .info-value.highlight { color: #00e5ff; font-weight: 600; }
+.card{
+  background:#1e293b;
+  padding:25px;
+  border-radius:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.4);
+}
 
-    /* ── History list ── */
-    #history-list {
-      list-style: none;
-      max-height: 220px;
-      overflow-y: auto;
-    }
-    #history-list li {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 0;
-      border-bottom: 1px solid #1e1e30;
-      font-size: 0.85rem;
-    }
-    .dot {
-      width: 9px; height: 9px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .dot.valid            { background: #00e676; }
-    .dot.invalid_person   { background: #ff1744; }
-    .dot.invalid_database { background: #ffd600; }
-    .dot.error            { background: #9c27b0; }
-    .dot.waiting          { background: #546e7a; }
-    .hist-time  { color: #666; font-size: 0.78rem; }
-    .hist-gr    { color: #00e5ff; }
+.card-title{
+  font-size:13px;
+  text-transform:uppercase;
+  letter-spacing:2px;
+  color:#64748b;
+  margin-bottom:15px;
+}
 
-    /* ── Pulse dot (live indicator) ── */
-    #live-dot {
-      display: inline-block;
-      width: 9px; height: 9px;
-      border-radius: 50%;
-      background: #00e676;
-      margin-right: 6px;
-      animation: pulse 1.2s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50%      { opacity: 0.3; transform: scale(1.5); }
-    }
-  </style>
+#camera{
+  width:100%;
+  border-radius:10px;
+  border:4px solid #334155;
+  transition:0.4s;
+}
+
+#camera.valid{border-color:#22c55e;}
+#camera.fee_unpaid{border-color:#f59e0b;}
+#camera.invalid_person{border-color:#ef4444;}
+
+#status{
+  margin-top:15px;
+  padding:12px;
+  text-align:center;
+  border-radius:50px;
+  font-weight:bold;
+  letter-spacing:1px;
+}
+
+#status.valid{background:#22c55e;color:white;}
+#status.fee_unpaid{background:#f59e0b;color:white;}
+#status.invalid_person{background:#ef4444;color:white;}
+#status.invalid_database{background:#a855f7;color:white;}
+#status.error{background:#dc2626;color:white;}
+#status.waiting{background:#334155;color:#cbd5e1;}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  padding:8px 0;
+  border-bottom:1px solid #334155;
+}
+
+.label{color:#64748b;font-size:13px;}
+.value{font-weight:600;}
+
+.history{
+  max-height:200px;
+  overflow-y:auto;
+  font-size:13px;
+}
+
+.history div{
+  padding:6px 0;
+  border-bottom:1px solid #334155;
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  display:inline-block;
+  margin-right:6px;
+}
+
+.dot.valid{background:#22c55e;}
+.dot.fee_unpaid{background:#f59e0b;}
+.dot.invalid_person{background:#ef4444;}
+.dot.invalid_database{background:#a855f7;}
+.dot.error{background:#dc2626;}
+</style>
 </head>
+
 <body>
 
 <header>
-  <h1>🎓 TransBuddy — Student Face Verification</h1>
-  <span id="live-clock"></span>
+  <h1>🚌 TransBuddy Bus Verification System</h1>
+  <div id="clock"></div>
 </header>
 
 <main>
 
-  <!-- Camera Feed Card -->
-  <div class="card" id="camera-card">
-    <div class="card-title"><span id="live-dot"></span> Live Camera Feed</div>
-    <div style="position:relative; width:100%;">
-      <img id="live-image" src="/static/latest.jpg" alt="Live feed" />
-      <div id="scan-overlay"></div>
-    </div>
-    <div id="status-badge" class="waiting">⏳ Waiting…</div>
-  </div>
+<!-- Camera -->
+<div class="card">
+  <div class="card-title">Live Camera Feed</div>
+  <img id="camera" src="/static/latest.jpg">
+  <div id="status" class="waiting">⏳ Waiting...</div>
+</div>
 
-  <!-- Details Card -->
-  <div style="display:flex; flex-direction:column; gap:28px;">
-    <div class="card">
-      <div class="card-title">Verification Details</div>
+<!-- Details -->
+<div style="display:flex;flex-direction:column;gap:30px;">
 
-      <div class="info-row">
-        <span class="info-label">GR Number</span>
-        <span class="info-value highlight" id="d-gr">—</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Student Name</span>
-        <span class="info-value" id="d-name">—</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Department</span>
-        <span class="info-value" id="d-dept">—</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Year / Sem</span>
-        <span class="info-value" id="d-year">—</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Route</span>
-        <span class="info-value" id="d-route">—</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Match Distance</span>
-        <span class="info-value" id="d-dist">—</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Timestamp</span>
-        <span class="info-value" id="d-time">—</span>
-      </div>
-    </div>
+<div class="card">
+  <div class="card-title">Student Details</div>
 
-    <!-- History Card -->
-    <div class="card">
-      <div class="card-title">Recent Attempts</div>
-      <ul id="history-list">
-        <li><span class="dot waiting"></span><span style="color:#546e7a;">No attempts yet</span></li>
-      </ul>
-    </div>
-  </div>
+  <div class="row"><span class="label">GR No</span><span id="gr" class="value">-</span></div>
+  <div class="row"><span class="label">Name</span><span id="name" class="value">-</span></div>
+  <div class="row"><span class="label">Department</span><span id="dept" class="value">-</span></div>
+  <div class="row"><span class="label">Year</span><span id="year" class="value">-</span></div>
+  <div class="row"><span class="label">Route</span><span id="route" class="value">-</span></div>
+  <div class="row"><span class="label">Similarity</span><span id="sim" class="value">-</span></div>
+  <div class="row"><span class="label">Time</span><span id="time" class="value">-</span></div>
+</div>
 
+<div class="card">
+  <div class="card-title">Recent Attempts</div>
+  <div id="history" class="history"></div>
+</div>
+
+</div>
 </main>
 
 <script>
-  // ── Clock ──
-  function updateClock() {
-    const now = new Date();
-    document.getElementById('live-clock').textContent =
-      now.toLocaleDateString('en-IN') + '  ' + now.toLocaleTimeString('en-IN');
+
+// Clock
+function updateClock(){
+  const now=new Date();
+  document.getElementById("clock").innerText=
+  now.toLocaleDateString("en-IN")+" "+
+  now.toLocaleTimeString("en-IN");
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// Poll server
+const historyDiv=document.getElementById("history");
+let history=[];
+
+async function fetchStatus(){
+  try{
+    const res=await fetch("/upload_status");
+    const data=await res.json();
+    updateUI(data);
+  }catch(e){}
+  
+  document.getElementById("camera").src="/static/latest.jpg?t="+Date.now();
+}
+
+function updateUI(data){
+
+  const status=data.status||"waiting";
+  const badge=document.getElementById("status");
+  const cam=document.getElementById("camera");
+
+  const labels={
+    valid:"✅ BUS ACCESS GRANTED",
+    fee_unpaid:"⚠ BUS FEE UNPAID",
+    invalid_person:"❌ INVALID PERSON",
+    invalid_database:"⚠ NOT IN DATABASE",
+    error:"🔴 SERVER ERROR",
+    waiting:"⏳ Waiting..."
+  };
+
+  badge.innerText=labels[status]||status;
+  badge.className=status;
+  cam.className=status;
+
+  const det=data.details||{};
+
+  document.getElementById("gr").innerText=data.gr_no||"-";
+  document.getElementById("name").innerText=det.name||"-";
+  document.getElementById("dept").innerText=det.department||"-";
+  document.getElementById("year").innerText=det.year||"-";
+  document.getElementById("route").innerText=det.route||"-";
+  document.getElementById("sim").innerText=data.similarity?data.similarity.toFixed(3):"-";
+  document.getElementById("time").innerText=data.timestamp||"-";
+
+  if(status!=="waiting"){
+    history.unshift({status:status,gr:data.gr_no||"unknown"});
+    if(history.length>20)history.pop();
+    renderHistory();
   }
-  setInterval(updateClock, 1000);
-  updateClock();
+}
 
-  // ── Status polling ──
-  const history = [];
+function renderHistory(){
+  historyDiv.innerHTML=history.map(h=>
+    `<div><span class="dot ${h.status}"></span>${h.gr} - ${h.status}</div>`
+  ).join("");
+}
 
-  async function checkStatus() {
-    try {
-      const r    = await fetch('/upload_status');
-      const data = await r.json();
-      applyResult(data);
-    } catch(e) {
-      console.warn('Poll error:', e);
-    }
+setInterval(fetchStatus,3000);
+fetchStatus();
 
-    // Refresh the camera image (cache-busting)
-    const img = document.getElementById('live-image');
-    img.src = '/static/latest.jpg?t=' + Date.now();
-  }
-
-  function applyResult(data) {
-    const badge  = document.getElementById('status-badge');
-    const imgEl  = document.getElementById('live-image');
-
-    const status = data.status || 'waiting';
-
-    // Badge text
-    const labels = {
-      valid:            '✅ VALID STUDENT',
-      invalid_person:   '❌ INVALID PERSON',
-      invalid_database: '⚠️ NOT IN DATABASE',
-      error:            '🔴 SERVER ERROR',
-      waiting:          '⏳ Waiting…',
-    };
-    badge.textContent  = labels[status] || status.toUpperCase();
-    badge.className    = status;
-    imgEl.className    = status === 'valid'            ? 'valid-border'   :
-                         status === 'invalid_person'   ? 'invalid-border' :
-                         status === 'invalid_database' ? 'warn-border'    : '';
-
-    // Details panel
-    const det = data.details || {};
-    setValue('d-gr',    data.gr_no    || '—');
-    setValue('d-name',  det.name      || '—');
-    setValue('d-dept',  det.department|| '—');
-    setValue('d-year',  det.year ? `${det.year} / Sem ${det.semester || '?'}` : '—');
-    setValue('d-route', det.route     || '—');
-    setValue('d-dist',  data.distance !== undefined ? data.distance.toFixed(4) : '—');
-    setValue('d-time',  data.timestamp|| '—');
-
-    // History
-    if (status !== 'waiting') {
-      const ts  = data.timestamp || new Date().toLocaleTimeString('en-IN');
-      const gr  = data.gr_no || 'unknown';
-      history.unshift({ status, ts, gr });
-      if (history.length > 20) history.pop();
-      renderHistory();
-    }
-  }
-
-  function setValue(id, val) {
-    document.getElementById(id).textContent = val;
-  }
-
-  function renderHistory() {
-    const ul  = document.getElementById('history-list');
-    ul.innerHTML = history.map(h => `
-      <li>
-        <span class="dot ${h.status}"></span>
-        <span class="hist-gr">${h.gr}</span>
-        <span style="color:#aaa; font-size:0.8rem;">${h.status.replace('_',' ').toUpperCase()}</span>
-        <span class="hist-time" style="margin-left:auto;">${h.ts}</span>
-      </li>
-    `).join('');
-  }
-
-  setInterval(checkStatus, 3000);
-  checkStatus();
 </script>
 </body>
 </html>
