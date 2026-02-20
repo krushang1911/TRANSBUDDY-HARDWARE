@@ -1,44 +1,35 @@
-"""
-=============================================================
-  Student Face Verification System — server.py
-=============================================================
-"""
-
 import os
+import cv2
+import numpy as np
 import datetime
 import shutil
-import time
-import logging
-import pymysql
 from flask import Flask, request, jsonify, render_template
-from werkzeug.utils import secure_filename
 from deepface import DeepFace
+from scipy.spatial.distance import cosine
+import pymysql
 
-app = Flask(__name__)
+# ================= CONFIG =================
 
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
+PHOTO_FOLDER = "photos"
+UPLOAD_FOLDER = "static"
+INVALID_FOLDER = "static/invalid_captures"
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "static")
-STUDENT_PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
-INVALID_LOG_DIR = os.path.join(UPLOAD_FOLDER, "invalid_captures")
+SIMILARITY_THRESHOLD = 0.40
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(STUDENT_PHOTOS_DIR, exist_ok=True)
-os.makedirs(INVALID_LOG_DIR, exist_ok=True)
+os.makedirs(INVALID_FOLDER, exist_ok=True)
 
-SIMILARITY_THRESHOLD = 0.55
+app = Flask(__name__)
 
 latest_result = {"status": "waiting"}
 
 # ================= DATABASE =================
 
-DB_CONFIG: dict[str, str | type] = {
+DB_CONFIG = {
     "host": "localhost",
     "user": "root",
     "password": "",
-    "database": "transbuddy",
+    "database": "transbuddy_db_1",
     "cursorclass": pymysql.cursors.DictCursor
 }
 
@@ -49,48 +40,42 @@ def fetch_student(gr_no):
     conn = get_db()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM students WHERE gr_no=%s", (gr_no,))
+            cur.execute(
+                "SELECT * FROM students_detail WHERE gr_no=%s",
+                (gr_no,)
+            )
             return cur.fetchone()
     finally:
         conn.close()
 
-# ================= FACE MATCH =================
+# ================= LOAD MODEL =================
 
-def match_face(live_img_path):
+print("Loading FaceNet model...")
+model = DeepFace.build_model("Facenet")
+print("Model loaded.")
 
-    best_gr = None
-    best_dist = float("inf")
+# ================= BUILD STUDENT EMBEDDINGS =================
 
-    for file in os.listdir(STUDENT_PHOTOS_DIR):
-        if not file.lower().endswith((".gif", ".jpg", ".jpeg", ".png")):
-            continue
+print("Building student embeddings...")
 
-        student_path = os.path.join(STUDENT_PHOTOS_DIR, file)
+student_embeddings = {}
 
+for file in os.listdir(PHOTO_FOLDER):
+    if file.endswith((".jpg", ".jpeg", ".png")):
+        path = os.path.join(PHOTO_FOLDER, file)
         try:
-            result = DeepFace.verify(
-                img1_path=live_img_path,
-                img2_path=student_path,
+            embedding = DeepFace.represent(
+                img_path=path,
                 model_name="Facenet",
-                detector_backend="retinaface",
-                enforce_detection=True,
-                distance_metric="cosine"
-            )
+                enforce_detection=False
+            )[0]["embedding"]
 
-            dist = result["distance"]
-
-            if dist < best_dist:
-                best_dist = dist
-                best_gr = os.path.splitext(file)[0]
-
+            gr_no = os.path.splitext(file)[0]
+            student_embeddings[gr_no] = embedding
         except Exception as e:
-            log.warning(f"Verification error for {file}: {e}")
-            continue
+            print("Skipping:", file)
 
-    if best_dist <= SIMILARITY_THRESHOLD:
-        return best_gr, best_dist
-
-    return None, best_dist
+print(f"Loaded {len(student_embeddings)} students.")
 
 # ================= ROUTES =================
 
@@ -107,7 +92,7 @@ def upload():
     global latest_result
 
     if "image" not in request.files:
-        return jsonify({"status": "error"}), 400
+        return jsonify({"status": "error", "error": "No image file"})
 
     image = request.files["image"]
     save_path = os.path.join(UPLOAD_FOLDER, "latest.jpg")
@@ -115,37 +100,65 @@ def upload():
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    gr_no, dist = match_face(save_path)
+    try:
+        live_embedding = DeepFace.represent(
+            img_path=save_path,
+            model_name="Facenet",
+            enforce_detection=False
+        )[0]["embedding"]
 
-    if gr_no:
-        student = fetch_student(gr_no)
+        best_match = None
+        best_distance = 999
 
-        if student:
-            latest_result = {
-                "status": "valid",
-                "gr_no": gr_no,
-                "distance": round(dist, 4),
-                "details": student,
-                "timestamp": timestamp
-            }
-            return jsonify(latest_result), 200
+        for gr_no, stored_embedding in student_embeddings.items():
+            dist = cosine(live_embedding, stored_embedding)
+            if dist < best_distance:
+                best_distance = dist
+                best_match = gr_no
+
+        if best_distance < SIMILARITY_THRESHOLD:
+
+            student = fetch_student(best_match)
+
+            if student:
+                latest_result = {
+                    "status": "valid",
+                    "gr_no": best_match,
+                    "distance": float(best_distance),
+                    "details": student,
+                    "timestamp": timestamp
+                }
+            else:
+                latest_result = {
+                    "status": "invalid_database",
+                    "gr_no": best_match,
+                    "distance": float(best_distance),
+                    "timestamp": timestamp
+                }
 
         else:
+            invalid_path = os.path.join(
+                INVALID_FOLDER,
+                f"unknown_{int(datetime.datetime.now().timestamp())}.jpg"
+            )
+            shutil.copy(save_path, invalid_path)
+
             latest_result = {
-                "status": "invalid_database",
-                "gr_no": gr_no,
-                "distance": round(dist, 4),
+                "status": "invalid_person",
+                "distance": float(best_distance),
                 "timestamp": timestamp
             }
-            return jsonify(latest_result), 200
 
-    else:
+        return jsonify(latest_result)
+
+    except Exception as e:
         latest_result = {
-            "status": "invalid_person",
-            "distance": round(dist, 4),
-            "timestamp": timestamp
+            "status": "error",
+            "error": str(e)
         }
-        return jsonify(latest_result), 200
+        return jsonify(latest_result)
+
+# ================= START =================
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
