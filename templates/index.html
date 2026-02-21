@@ -1,245 +1,680 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TransBuddy Bus Verification</title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TransBuddy – Bus Face Verification | Marwadi University</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Segoe UI,Arial}
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-body{
-  background:#0f172a;
-  color:#e2e8f0;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  min-height:100vh;
-}
+    :root {
+      --bg:     #0a0f1e;
+      --surf:   #111827;
+      --surf2:  #1a2235;
+      --border: #1e2d47;
+      --accent: #3b82f6;
+      --green:  #10b981;
+      --yellow: #f59e0b;
+      --red:    #ef4444;
+      --text:   #f1f5f9;
+      --muted:  #64748b;
+      --r:      12px;
+    }
 
-header{
-  width:100%;
-  padding:20px;
-  background:linear-gradient(90deg,#1e293b,#0f172a);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  box-shadow:0 3px 10px rgba(0,0,0,0.4);
-}
+    html, body {
+      height: 100%;
+      font-family: "Inter", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-header h1{
-  color:#38bdf8;
-  font-size:20px;
-}
+    /* ──────────────── HEADER */
+    header {
+      background: var(--surf);
+      border-bottom: 1px solid var(--border);
+      padding: 13px 26px;
+      display: flex; align-items: center; gap: 13px;
+    }
+    .logo {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 19px; flex-shrink: 0;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    header p  { font-size: .73rem; color: var(--muted); }
+    .hdr-r    { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); box-shadow: 0 0 6px var(--green);
+      animation: blink 1.4s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    #clock { font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-#clock{
-  font-size:14px;
-  color:#94a3b8;
-}
+    /* ──────────────── LAYOUT */
+    main {
+      display: grid;
+      grid-template-columns: 1fr 1fr 320px;
+      grid-template-rows: auto auto auto 1fr;
+      gap: 16px;
+      padding: 18px 24px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
 
-main{
-  margin-top:30px;
-  width:100%;
-  max-width:1000px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:30px;
-  padding:20px;
-}
+    /* ──────────────── CARD */
+    .card {
+      background: var(--surf);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px;
+    }
+    .card-title {
+      font-size: .66rem; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 12px;
+    }
 
-@media(max-width:800px){
-  main{grid-template-columns:1fr;}
-}
+    /* ──────────────── BANNER */
+    #banner {
+      grid-column: 1 / -1;
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px;
+      border-radius: var(--r);
+      border: 1px solid var(--border);
+      background: var(--surf);
+      transition: background .3s, border-color .3s;
+    }
+    #banner[data-s="valid_with_bus"]    { border-color: var(--green);  background: rgba(16,185,129,.08); }
+    #banner[data-s="valid_without_bus"] { border-color: var(--yellow); background: rgba(245,158,11,.08); }
+    #banner[data-s="invalid_person"],
+    #banner[data-s="invalid_database"]  { border-color: var(--red);    background: rgba(239,68,68,.08);  }
+    #b-icon  { font-size: 1.9rem; }
+    #b-title { font-size: 1.05rem; font-weight: 700; }
+    #b-msg   { font-size: .77rem; color: var(--muted); margin-top: 2px; }
+    #b-right { margin-left: auto; text-align: right; }
+    #b-conf  { font-size: 1.4rem; font-weight: 700; }
+    #b-right small { font-size: .65rem; color: var(--muted); display: block; }
 
-.card{
-  background:#1e293b;
-  padding:25px;
-  border-radius:12px;
-  box-shadow:0 4px 20px rgba(0,0,0,0.4);
-}
+    /* ──────────────── STATS */
+    .stats-row {
+      grid-column: 1 / -1;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    .stat {
+      background: var(--surf); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 13px 16px;
+      display: flex; align-items: center; gap: 11px;
+    }
+    .s-icon {
+      width: 38px; height: 38px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; flex-shrink: 0;
+    }
+    .s-icon.blue   { background: rgba(59,130,246,.15); }
+    .s-icon.green  { background: rgba(16,185,129,.15); }
+    .s-icon.yellow { background: rgba(245,158,11,.15); }
+    .s-icon.red    { background: rgba(239,68,68,.15);  }
+    .s-val   { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .s-label { font-size: .66rem; color: var(--muted); margin-top: 2px; }
 
-.card-title{
-  font-size:13px;
-  text-transform:uppercase;
-  letter-spacing:2px;
-  color:#64748b;
-  margin-bottom:15px;
-}
+    /* ──────────────── CAMERA PANELS */
 
-#camera{
-  width:100%;
-  border-radius:10px;
-  border:4px solid #334155;
-  transition:0.4s;
-}
+    /* Live Feed */
+    .cam-card {
+      background: var(--surf);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .cam-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .cam-header span { font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+    .cam-header .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
+    .cam-header .dot.live { background: var(--green); animation: blink 1.4s infinite; }
+    .cam-body { flex: 1; position: relative; background: #000; min-height: 240px; }
+    .cam-body img, .cam-body video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      min-height: 240px; max-height: 300px;
+    }
+    .cam-overlay {
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(0,0,0,.65);
+      color: #fff; font-size: .62rem; font-weight: 600;
+      letter-spacing: .05em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .no-feed {
+      width: 100%; min-height: 240px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; color: var(--muted); font-size: .8rem;
+    }
+    .no-feed-icon { font-size: 2.5rem; opacity: .35; }
 
-#camera.valid{border-color:#22c55e;}
-#camera.fee_unpaid{border-color:#f59e0b;}
-#camera.invalid_person{border-color:#ef4444;}
+    /* Comparison row: captured vs enrollment */
+    .compare-row {
+      grid-column: 1 / 3;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    }
 
-#status{
-  margin-top:15px;
-  padding:12px;
-  text-align:center;
-  border-radius:50px;
-  font-weight:bold;
-  letter-spacing:1px;
-}
+    /* Match pill */
+    .match-bar {
+      grid-column: 1 / 3;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ml { flex: 1; height: 1px; background: var(--border); }
+    .match-pill {
+      padding: 4px 16px; border-radius: 999px;
+      font-size: .72rem; font-weight: 600; white-space: nowrap;
+    }
+    .mp-idle   { background: rgba(100,116,139,.15); color: var(--muted); }
+    .mp-green  { background: rgba(16,185,129,.15);  color: var(--green); }
+    .mp-yellow { background: rgba(245,158,11,.15);  color: var(--yellow); }
+    .mp-red    { background: rgba(239,68,68,.15);   color: var(--red); }
 
-#status.valid{background:#22c55e;color:white;}
-#status.fee_unpaid{background:#f59e0b;color:white;}
-#status.invalid_person{background:#ef4444;color:white;}
-#status.invalid_database{background:#a855f7;color:white;}
-#status.error{background:#dc2626;color:white;}
-#status.waiting{background:#334155;color:#cbd5e1;}
+    /* ──────────────── STUDENT PANEL */
+    #info-card { grid-column: 3; grid-row: 3 / 6; }
+    .avatar {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.7rem; margin-bottom: 12px;
+      overflow: hidden;
+      border: 3px solid var(--border);
+      transition: border-color 0.3s, box-shadow 0.3s;
+      flex-shrink: 0;
+    }
+    .avatar img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .avatar.av-green  { border-color: var(--green);  box-shadow: 0 0 14px rgba(16,185,129,.45); }
+    .avatar.av-yellow { border-color: var(--yellow); box-shadow: 0 0 14px rgba(245,158,11,.45); }
+    .avatar.av-red    { border-color: var(--red);    box-shadow: 0 0 14px rgba(239,68,68,.35);  }
+    #stu-name { font-size: 1.15rem; font-weight: 700; }
+    #stu-gr   { font-size: .72rem; color: var(--muted); font-family: monospace; margin-top: 2px; }
+    .det-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+    .det label {
+      font-size: .6rem; font-weight: 600; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--muted);
+      display: block; margin-bottom: 3px;
+    }
+    .det .val { font-size: .82rem; font-weight: 500; }
+    .fee-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: 999px;
+      font-size: .72rem; font-weight: 600;
+    }
+    .fee-paid   { background: rgba(16,185,129,.15); color: var(--green); }
+    .fee-unpaid { background: rgba(239,68,68,.15);  color: var(--red); }
+    .conf-bar-w { display: flex; align-items: center; gap: 6px; }
+    .cbar { width: 54px; height: 4px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .cfill { height: 100%; border-radius: 3px; background: var(--accent); transition: width .3s; }
 
-.row{
-  display:flex;
-  justify-content:space-between;
-  padding:8px 0;
-  border-bottom:1px solid #334155;
-}
+    /* ──────────────── LOG TABLE */
+    #log-card { grid-column: 1 / 3; }
+    table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+    thead th {
+      text-align: left; padding: 7px 9px;
+      font-size: .63rem; font-weight: 600; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: background .15s; }
+    tbody tr:hover { background: var(--surf2); }
+    tbody td { padding: 8px 9px; vertical-align: middle; }
+    .sp {
+      padding: 2px 8px; border-radius: 999px;
+      font-size: .66rem; font-weight: 600;
+    }
+    .sp-g { background: rgba(16,185,129,.15); color: var(--green); }
+    .sp-y { background: rgba(245,158,11,.15);  color: var(--yellow); }
+    .sp-r { background: rgba(239,68,68,.15);   color: var(--red); }
+    .thumb {
+      width: 34px; height: 34px; border-radius: 6px;
+      object-fit: cover; border: 1px solid var(--border);
+    }
+    .nothumb {
+      width: 34px; height: 34px; border-radius: 6px;
+      background: var(--surf2); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: .9rem;
+    }
+    .no-data td { text-align: center; color: var(--muted); padding: 26px; }
 
-.label{color:#64748b;font-size:13px;}
-.value{font-weight:600;}
+    /* ──────────────── FOOTER */
+    footer {
+      text-align: center; padding: 9px;
+      font-size: .68rem; color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
 
-.history{
-  max-height:200px;
-  overflow-y:auto;
-  font-size:13px;
-}
+    @keyframes slideIn { from { opacity:0; transform:translateY(-5px) } to { opacity:1; transform:none } }
+    .anim { animation: slideIn .3s ease; }
 
-.history div{
-  padding:6px 0;
-  border-bottom:1px solid #334155;
-}
-
-.dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  display:inline-block;
-  margin-right:6px;
-}
-
-.dot.valid{background:#22c55e;}
-.dot.fee_unpaid{background:#f59e0b;}
-.dot.invalid_person{background:#ef4444;}
-.dot.invalid_database{background:#a855f7;}
-.dot.error{background:#dc2626;}
-</style>
+    @media(max-width: 1100px) {
+      main { grid-template-columns: 1fr 1fr; }
+      #info-card { grid-column: 1 / -1; grid-row: auto; }
+      .compare-row { grid-column: 1 / -1; }
+      .match-bar { grid-column: 1 / -1; }
+      #log-card { grid-column: 1 / -1; }
+    }
+    @media(max-width: 700px) {
+      main { grid-template-columns: 1fr; padding: 12px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .compare-row { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-
 <body>
 
+<!-- HEADER -->
 <header>
-  <h1>🚌 TransBuddy Bus Verification System</h1>
-  <div id="clock"></div>
+  <div class="logo">🚌</div>
+  <div>
+    <h1>TransBuddy Face Verification</h1>
+    <p>Marwadi University – Bus Access Control</p>
+  </div>
+  <div class="hdr-r">
+    <div class="live-dot"></div>
+    <span style="font-size:.7rem;color:var(--muted)">Live</span>
+    <span id="clock">--:--:--</span>
+  </div>
 </header>
 
 <main>
 
-<!-- Camera -->
-<div class="card">
-  <div class="card-title">Live Camera Feed</div>
-  <img id="camera" src="/static/latest.jpg">
-  <div id="status" class="waiting">⏳ Waiting...</div>
-</div>
+  <!-- ── BANNER -->
+  <div id="banner" data-s="idle">
+    <div id="b-icon">⏳</div>
+    <div>
+      <div id="b-title">Waiting for scan…</div>
+      <div id="b-msg">System ready. Awaiting camera input from Raspberry Pi.</div>
+    </div>
+    <div id="b-right">
+      <div id="b-conf">—</div>
+      <small>Confidence</small>
+    </div>
+  </div>
 
-<!-- Details -->
-<div style="display:flex;flex-direction:column;gap:30px;">
+  <!-- ── STATS -->
+  <div class="stats-row">
+    <div class="stat"><div class="s-icon blue">🔍</div><div><div class="s-val" id="st-total">0</div><div class="s-label">Total Scans</div></div></div>
+    <div class="stat"><div class="s-icon green">✅</div><div><div class="s-val" id="st-valid">0</div><div class="s-label">Granted</div></div></div>
+    <div class="stat"><div class="s-icon yellow">⚠️</div><div><div class="s-val" id="st-nofee">0</div><div class="s-label">Fee Unpaid</div></div></div>
+    <div class="stat"><div class="s-icon red">❌</div><div><div class="s-val" id="st-inv">0</div><div class="s-label">Rejected</div></div></div>
+  </div>
 
-<div class="card">
-  <div class="card-title">Student Details</div>
+  <!-- ── LIVE FEED (Raspberry Pi camera stream) -->
+  <div class="cam-card">
+    <div class="cam-header">
+      <div class="dot live"></div>
+      <span>Live Camera – Raspberry Pi</span>
+    </div>
+    <div class="cam-body">
+      <img id="live-img" src="/live_feed"
+           alt="Live Feed"
+           onerror="this.style.display='none'; document.getElementById('no-live').style.display='flex'"/>
+      <div id="no-live" class="no-feed" style="display:none">
+        <div class="no-feed-icon">📡</div>
+        <span>Waiting for Raspberry Pi connection…</span>
+      </div>
+      <div class="cam-overlay">📡 Live</div>
+    </div>
+  </div>
 
-  <div class="row"><span class="label">GR No</span><span id="gr" class="value">-</span></div>
-  <div class="row"><span class="label">Name</span><span id="name" class="value">-</span></div>
-  <div class="row"><span class="label">Department</span><span id="dept" class="value">-</span></div>
-  <div class="row"><span class="label">Year</span><span id="year" class="value">-</span></div>
-  <div class="row"><span class="label">Route</span><span id="route" class="value">-</span></div>
-  <div class="row"><span class="label">Similarity</span><span id="sim" class="value">-</span></div>
-  <div class="row"><span class="label">Time</span><span id="time" class="value">-</span></div>
-</div>
+  <!-- ── CAPTURED FRAME (last frame processed) -->
+  <div class="cam-card">
+    <div class="cam-header">
+      <div class="dot" id="cap-dot"></div>
+      <span>Last Captured Frame</span>
+    </div>
+    <div class="cam-body">
+      <div id="cap-wrap">
+        <div class="no-feed">
+          <div class="no-feed-icon">📷</div>
+          <span>No capture yet</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<div class="card">
-  <div class="card-title">Recent Attempts</div>
-  <div id="history" class="history"></div>
-</div>
+  <!-- ── COMPARISON: Captured vs Enrollment -->
+  <div class="compare-row">
 
-</div>
+    <!-- Captured -->
+    <div class="cam-card">
+      <div class="cam-header">
+        <div class="dot" id="cmp-cap-dot"></div>
+        <span>Captured Frame (Pi)</span>
+      </div>
+      <div class="cam-body" id="cmp-cap-body">
+        <div class="no-feed">
+          <div class="no-feed-icon">📷</div>
+          <span>Awaiting scan</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enrollment -->
+    <div class="cam-card">
+      <div class="cam-header">
+        <div class="dot" style="background:var(--accent)"></div>
+        <span>Enrollment Photo (Database)</span>
+      </div>
+      <div class="cam-body" id="cmp-enr-body">
+        <div class="no-feed">
+          <div class="no-feed-icon">🎓</div>
+          <span>No match yet</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── MATCH PILL -->
+  <div class="match-bar">
+    <div class="ml"></div>
+    <div id="match-pill" class="match-pill mp-idle">Awaiting scan</div>
+    <div class="ml"></div>
+  </div>
+
+  <!-- ── STUDENT INFO -->
+  <div class="card" id="info-card">
+    <div class="card-title">Student Details</div>
+    <div class="avatar" id="stu-avatar">👤</div>
+    <div id="stu-name">—</div>
+    <div id="stu-gr">GR No.: —</div>
+    <div class="det-grid">
+      <div class="det"><label>Department</label><div class="val" id="d-dept">—</div></div>
+      <div class="det"><label>Year</label><div class="val" id="d-year">—</div></div>
+      <div class="det"><label>Route</label><div class="val" id="d-route">—</div></div>
+      <div class="det"><label>Fee Status</label><div class="val" id="d-fee">—</div></div>
+      <div class="det"><label>Match Score</label><div class="val" id="d-score">—</div></div>
+      <div class="det"><label>Last Scan</label><div class="val" id="d-time">—</div></div>
+    </div>
+  </div>
+
+  <!-- ── LOG TABLE -->
+  <div class="card" id="log-card">
+    <div class="card-title">Recognition Log (last 50)</div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Frame</th>
+            <th>Enrollment</th>
+            <th>Time</th>
+            <th>GR No.</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody id="log-body">
+          <tr class="no-data"><td colspan="7">No scans yet…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </main>
 
+<footer>
+  TransBuddy v3.0 &nbsp;|&nbsp; Marwadi University &nbsp;|&nbsp;
+  Polling every 2s &nbsp;|&nbsp; <span id="last-poll">—</span>
+</footer>
+
 <script>
+"use strict";
+
+const POLL_MS = 2000;
+let lastTs    = null;
+let stats     = { total:0, valid:0, nofee:0, inv:0 };
+
+const $ = id => document.getElementById(id);
+
+const DOM = {
+  banner:      $("banner"),
+  bIcon:       $("b-icon"),
+  bTitle:      $("b-title"),
+  bMsg:        $("b-msg"),
+  bConf:       $("b-conf"),
+  capWrap:     $("cap-wrap"),
+  cmpCapBody:  $("cmp-cap-body"),
+  cmpEnrBody:  $("cmp-enr-body"),
+  matchPill:   $("match-pill"),
+  capDot:      $("cap-dot"),
+  cmpCapDot:   $("cmp-cap-dot"),
+  logBody:     $("log-body"),
+  avatar:      $("stu-avatar"),
+  name:        $("stu-name"),
+  gr:          $("stu-gr"),
+  dept:        $("d-dept"),
+  year:        $("d-year"),
+  route:       $("d-route"),
+  fee:         $("d-fee"),
+  score:       $("d-score"),
+  time:        $("d-time"),
+  stTotal:     $("st-total"),
+  stValid:     $("st-valid"),
+  stNofee:     $("st-nofee"),
+  stInv:       $("st-inv"),
+  lastPoll:    $("last-poll"),
+};
 
 // Clock
-function updateClock(){
-  const now=new Date();
-  document.getElementById("clock").innerText=
-  now.toLocaleDateString("en-IN")+" "+
-  now.toLocaleTimeString("en-IN");
-}
-setInterval(updateClock,1000);
-updateClock();
+setInterval(() => {
+  $("clock").textContent = new Date().toLocaleTimeString("en-IN",{hour12:false});
+}, 1000);
 
-// Poll server
-const historyDiv=document.getElementById("history");
-let history=[];
+const CFG = {
+  valid_with_bus:    { icon:"✅", title:"Access Granted – Bus Allowed",  pill:"mp-green",  pillTxt:"✅ MATCH – BUS ACCESS GRANTED",  dot:"var(--green)",  sp:"sp-g", short:"With Bus"  },
+  valid_without_bus: { icon:"⚠️", title:"Identity OK – Fee Unpaid",      pill:"mp-yellow", pillTxt:"⚠️ MATCH – FEE NOT PAID",        dot:"var(--yellow)", sp:"sp-y", short:"No Bus"    },
+  invalid_person:    { icon:"❌", title:"Unknown Person",                  pill:"mp-red",    pillTxt:"❌ NO MATCH – UNKNOWN PERSON",    dot:"var(--red)",    sp:"sp-r", short:"Invalid"   },
+  invalid_database:  { icon:"🔴", title:"Not Found in Database",           pill:"mp-red",    pillTxt:"🔴 MATCHED BUT NOT IN DATABASE", dot:"var(--red)",    sp:"sp-r", short:"No DB"     },
+  idle:              { icon:"⏳", title:"Waiting for scan…",               pill:"mp-idle",   pillTxt:"Awaiting scan",                  dot:"var(--muted)",  sp:"",     short:"Idle"      },
+};
 
-async function fetchStatus(){
-  try{
-    const res=await fetch("/upload_status");
-    const data=await res.json();
-    updateUI(data);
-  }catch(e){}
-  
-  document.getElementById("camera").src="/static/latest.jpg?t="+Date.now();
+function fmtTime(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("en-IN", {hour12:false});
 }
 
-function updateUI(data){
+function confHTML(conf) {
+  if (conf === null || conf === undefined) return "—";
+  const p = Math.round(conf * 100);
+  return `<div class="conf-bar-w">
+    <div class="cbar"><div class="cfill" style="width:${p}%"></div></div>
+    <span>${p}%</span>
+  </div>`;
+}
 
-  const status=data.status||"waiting";
-  const badge=document.getElementById("status");
-  const cam=document.getElementById("camera");
+function feeBadge(fee) {
+  if (!fee) return "—";
+  const paid = fee.toLowerCase() === "paid";
+  return `<span class="fee-badge ${paid?"fee-paid":"fee-unpaid"}">${paid?"✓":"✗"} ${fee}</span>`;
+}
 
-  const labels={
-    valid:"✅ BUS ACCESS GRANTED",
-    fee_unpaid:"⚠ BUS FEE UNPAID",
-    invalid_person:"❌ INVALID PERSON",
-    invalid_database:"⚠ NOT IN DATABASE",
-    error:"🔴 SERVER ERROR",
-    waiting:"⏳ Waiting..."
-  };
+function imgBox(b64, fallbackIcon, fallbackText) {
+  if (b64)
+    return `<img src="${b64}" style="width:100%;height:100%;min-height:220px;object-fit:cover;display:block;">`;
+  return `<div class="no-feed"><div class="no-feed-icon">${fallbackIcon}</div><span>${fallbackText}</span></div>`;
+}
 
-  badge.innerText=labels[status]||status;
-  badge.className=status;
-  cam.className=status;
+// ── Update everything ──────────────────────────────────────────────────────
+function applyResult(d) {
+  const s   = d.status || "idle";
+  const cfg = CFG[s] || CFG.idle;
 
-  const det=data.details||{};
+  // Banner
+  DOM.banner.setAttribute("data-s", s);
+  DOM.bIcon.textContent  = cfg.icon;
+  DOM.bTitle.textContent = cfg.title;
+  DOM.bMsg.textContent   = d.message || "";
+  const p = d.confidence !== null && d.confidence !== undefined
+    ? Math.round(d.confidence * 100) + "%" : "—";
+  DOM.bConf.textContent  = p;
 
-  document.getElementById("gr").innerText=data.gr_no||"-";
-  document.getElementById("name").innerText=det.name||"-";
-  document.getElementById("dept").innerText=det.department||"-";
-  document.getElementById("year").innerText=det.year||"-";
-  document.getElementById("route").innerText=det.route||"-";
-  document.getElementById("sim").innerText=data.similarity?data.similarity.toFixed(3):"-";
-  document.getElementById("time").innerText=data.timestamp||"-";
+  // Last captured frame (top right)
+  DOM.capWrap.innerHTML = imgBox(d.captured_b64, "📷", "No capture yet");
+  DOM.capDot.style.background    = d.captured_b64   ? cfg.dot : "var(--muted)";
+  DOM.cmpCapDot.style.background = d.captured_b64   ? cfg.dot : "var(--muted)";
 
-  if(status!=="waiting"){
-    history.unshift({status:status,gr:data.gr_no||"unknown"});
-    if(history.length>20)history.pop();
-    renderHistory();
+  // Comparison section
+  DOM.cmpCapBody.innerHTML = imgBox(d.captured_b64,   "📷", "Awaiting scan");
+  DOM.cmpEnrBody.innerHTML = imgBox(d.enrollment_b64, "🎓", s === "invalid_person" ? "No match found" : "No enrollment photo");
+
+  // Match pill
+  DOM.matchPill.textContent = cfg.pillTxt;
+  DOM.matchPill.className   = `match-pill ${cfg.pill}`;
+
+  // Student details
+  if (s === "valid_with_bus" || s === "valid_without_bus") {
+    // Show enrollment photo in avatar circle
+    if (d.enrollment_b64) {
+      DOM.avatar.innerHTML = `<img src="${d.enrollment_b64}" alt="Student Photo">`;
+    } else {
+      DOM.avatar.innerHTML = "👤";
+    }
+    DOM.avatar.className = s === "valid_with_bus" ? "avatar av-green" : "avatar av-yellow";
+    DOM.name.textContent   = d.name || "—";
+    DOM.gr.textContent     = `GR No.: ${d.gr_no || "—"}`;
+    DOM.dept.textContent   = d.department || "—";
+    DOM.year.textContent   = d.year || "—";
+    DOM.route.textContent  = d.route || "—";
+    DOM.fee.innerHTML      = feeBadge(d.fee_status);
+    DOM.score.innerHTML    = confHTML(d.confidence);
+    DOM.time.textContent   = fmtTime(d.timestamp);
+  } else if (s === "invalid_person") {
+    DOM.avatar.innerHTML = "❓";
+    DOM.avatar.className = "avatar av-red";
+    DOM.name.textContent   = "Unknown Person";
+    DOM.gr.textContent     = "GR No.: —";
+    DOM.dept.textContent = DOM.year.textContent = DOM.route.textContent = "—";
+    DOM.fee.innerHTML = "—"; DOM.score.innerHTML = confHTML(d.confidence);
+    DOM.time.textContent = fmtTime(d.timestamp);
+  } else if (s === "invalid_database") {
+    DOM.avatar.innerHTML = "🚫";
+    DOM.avatar.className = "avatar av-red";
+    DOM.name.textContent   = "Not in Database";
+    DOM.gr.textContent     = `GR No.: ${d.gr_no || "—"}`;
+    DOM.dept.textContent = DOM.year.textContent = DOM.route.textContent = "—";
+    DOM.fee.innerHTML = "—"; DOM.score.innerHTML = confHTML(d.confidence);
+    DOM.time.textContent = fmtTime(d.timestamp);
+  }
+
+  // Log row
+  appendLog(d, cfg);
+
+  // Stats
+  stats.total++;
+  if (s === "valid_with_bus")    stats.valid++;
+  if (s === "valid_without_bus") stats.nofee++;
+  if (s === "invalid_person" || s === "invalid_database") stats.inv++;
+  DOM.stTotal.textContent = stats.total;
+  DOM.stValid.textContent = stats.valid;
+  DOM.stNofee.textContent = stats.nofee;
+  DOM.stInv.textContent   = stats.inv;
+}
+
+function appendLog(d, cfg) {
+  document.querySelector(".no-data")?.remove();
+
+  const capThumb = d.captured_b64
+    ? `<img src="${d.captured_b64}" class="thumb" alt="cap">`
+    : `<div class="nothumb">📷</div>`;
+
+  const enrThumb = d.enrollment_b64
+    ? `<img src="${d.enrollment_b64}" class="thumb" alt="enr">`
+    : `<div class="nothumb">🎓</div>`;
+
+  const tr = document.createElement("tr");
+  tr.classList.add("anim");
+  tr.innerHTML = `
+    <td>${capThumb}</td>
+    <td>${enrThumb}</td>
+    <td>${fmtTime(d.timestamp)}</td>
+    <td style="font-family:monospace;font-size:.72rem">${d.gr_no || "—"}</td>
+    <td>${d.name || "—"}</td>
+    <td><span class="sp ${cfg.sp}">${cfg.short}</span></td>
+    <td>${confHTML(d.confidence)}</td>
+  `;
+  DOM.logBody.insertBefore(tr, DOM.logBody.firstChild);
+  while (DOM.logBody.rows.length > 50) DOM.logBody.deleteRow(DOM.logBody.rows.length - 1);
+}
+
+// ── Result freeze logic ────────────────────────────────────────────────────
+// After a VALID or INVALID result, freeze the display for FREEZE_MS
+// so the next unknown/idle result from Pi doesn't overwrite it immediately.
+const FREEZE_MS   = 5000;   // Hold result on screen for 5 seconds
+let   freezeUntil = 0;      // Timestamp until which we ignore new results
+
+function isFrozen() {
+  return Date.now() < freezeUntil;
+}
+
+function freezeResult() {
+  freezeUntil = Date.now() + FREEZE_MS;
+}
+
+// Priority: valid_with_bus > valid_without_bus > invalid_database > invalid_person
+const PRIORITY = {
+  valid_with_bus:    4,
+  valid_without_bus: 3,
+  invalid_database:  2,
+  invalid_person:    1,
+  idle:              0,
+};
+
+function shouldUpdate(newStatus) {
+  // Always update if not frozen
+  if (!isFrozen()) return true;
+  // While frozen: only update if new result has HIGHER priority (better result came in)
+  const current = DOM.banner.getAttribute("data-s") || "idle";
+  return (PRIORITY[newStatus] || 0) > (PRIORITY[current] || 0);
+}
+
+// ── Poll ───────────────────────────────────────────────────────────────────
+async function poll() {
+  try {
+    const res = await fetch("/upload_status", { cache:"no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d   = await res.json();
+
+    // Show countdown in footer
+    const remaining = Math.max(0, Math.ceil((freezeUntil - Date.now()) / 1000));
+    DOM.lastPoll.textContent = remaining > 0
+      ? `Result held for ${remaining}s more…`
+      : `Updated: ${fmtTime(new Date().toISOString())}`;
+
+    // Skip if same timestamp (already processed)
+    if (!d.timestamp || d.timestamp === lastTs) return;
+    // Skip idle
+    if (d.status === "idle") return;
+    // Skip if frozen and not a better result
+    if (!shouldUpdate(d.status)) return;
+
+    lastTs = d.timestamp;
+    applyResult(d);
+    freezeResult();   // Freeze display after every new result
+
+  } catch(e) {
+    DOM.lastPoll.textContent = `Poll error: ${e.message}`;
   }
 }
 
-function renderHistory(){
-  historyDiv.innerHTML=history.map(h=>
-    `<div><span class="dot ${h.status}"></span>${h.gr} - ${h.status}</div>`
-  ).join("");
-}
-
-setInterval(fetchStatus,3000);
-fetchStatus();
-
+poll();
+setInterval(poll, POLL_MS);
 </script>
 </body>
 </html>
