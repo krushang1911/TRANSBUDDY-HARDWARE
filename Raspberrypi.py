@@ -1,10 +1,10 @@
 """
-TransBuddy Bus Face Verification â€“ Raspberry Pi Client
-Marwadi University â€“ Production System
+TransBuddy Bus Face Verification – Raspberry Pi Client
+Marwadi University – Production System
 Version: 3.0.0
 
 Uses NGROK public URL to send frames to server.
-No Flask on Pi side â€“ pure HTTP POST client only.
+No Flask on Pi side – pure HTTP POST client only.
 
 Setup:
     1. Start ngrok on server PC:
@@ -24,11 +24,11 @@ import requests
 import cv2
 import numpy as np
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# CONFIGURATION  â† Edit these values before running
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+# CONFIGURATION  ← Edit these values before running
+# ─────────────────────────────────────────────────────────────────────────────
 class Config:
-    # â”€â”€ Paste your ngrok URL here (no trailing slash) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Paste your ngrok URL here (no trailing slash) ──────────────────────
     # Example: "https://abc123.ngrok-free.app"
     SERVER_URL = "https://dissuasive-osseous-ethelyn.ngrok-free.dev"
     
@@ -65,9 +65,9 @@ class Config:
     VERBOSE = True
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # LOGGING
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level   = logging.INFO,
     format  = "%(asctime)s [%(levelname)s] %(message)s",
@@ -76,36 +76,36 @@ logging.basicConfig(
 logger = logging.getLogger("transbuddy-pi")
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # VALIDATE CONFIG
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def validate_config():
     if "YOUR-NGROK-URL" in Config.SERVER_URL:
-        logger.error("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+        logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         logger.error("  ERROR: Please set your ngrok URL in Config.SERVER_URL")
         logger.error("  Example: https://abc123.ngrok-free.app")
-        logger.error("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+        logger.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         raise SystemExit(1)
 
     if not Config.SERVER_URL.startswith("https://"):
-        logger.warning("SERVER_URL does not start with https:// â€” are you sure this is correct?")
+        logger.warning("SERVER_URL does not start with https:// — are you sure this is correct?")
 
     logger.info(f"Server URL : {Config.SERVER_URL}")
     logger.info(f"Upload URL : {Config.SERVER_URL}{Config.UPLOAD_ENDPOINT}")
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # HAAR CASCADE (lightweight on-device face gate)
-# Only decides WHETHER to send frame â€” actual recognition is server-side ArcFace
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Only decides WHETHER to send frame — actual recognition is server-side ArcFace
+# ─────────────────────────────────────────────────────────────────────────────
 FACE_CASCADE = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 )
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # CAMERA
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def init_camera() -> cv2.VideoCapture:
     cap = cv2.VideoCapture(Config.CAMERA_INDEX)
     if not cap.isOpened():
@@ -119,13 +119,13 @@ def init_camera() -> cv2.VideoCapture:
     return cap
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # FACE DETECTION GATE
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def has_valid_face(frame: np.ndarray) -> bool:
     """
     Returns True if a face of acceptable size is visible.
-    Used only as a capture gate â€” NOT for identity verification.
+    Used only as a capture gate — NOT for identity verification.
     Identity is handled by server-side ArcFace.
     """
     gray  = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -150,9 +150,9 @@ def has_valid_face(frame: np.ndarray) -> bool:
     return False
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # ENCODE FRAME TO JPEG (in memory, no disk write)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def encode_jpeg(frame: np.ndarray) -> bytes:
     ok, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, Config.JPEG_QUALITY])
     if not ok:
@@ -160,9 +160,9 @@ def encode_jpeg(frame: np.ndarray) -> bytes:
     return buf.tobytes()
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # SEND FRAME TO SERVER VIA NGROK
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def send_frame(jpeg_bytes: bytes) -> dict | None:
     """
     POST JPEG frame to ngrok server /upload endpoint.
@@ -187,22 +187,22 @@ def send_frame(jpeg_bytes: bytes) -> dict | None:
         return response.json()
 
     except requests.exceptions.Timeout:
-        logger.warning(f"Timeout after {Config.NETWORK_TIMEOUT}s â€” server slow or ngrok issue")
+        logger.warning(f"Timeout after {Config.NETWORK_TIMEOUT}s — server slow or ngrok issue")
     except requests.exceptions.ConnectionError:
-        logger.warning("Connection error â€” check ngrok URL or internet connection")
+        logger.warning("Connection error — check ngrok URL or internet connection")
     except requests.exceptions.HTTPError as e:
         logger.warning(f"HTTP {e.response.status_code} from server: {e}")
     except requests.exceptions.JSONDecodeError:
-        logger.warning("Server returned non-JSON response â€” possible ngrok warning page")
+        logger.warning("Server returned non-JSON response — possible ngrok warning page")
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
 
     return None
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # HANDLE RESULT
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def handle_result(result: dict):
     """
     Process server response and trigger appropriate action.
@@ -212,7 +212,7 @@ def handle_result(result: dict):
 
     if status == "valid_with_bus":
         logger.info(
-            f"âœ… ACCESS GRANTED  | "
+            f"✅ ACCESS GRANTED  | "
             f"{result.get('name')} | "
             f"GR: {result.get('gr_no')} | "
             f"Route: {result.get('route')} | "
@@ -222,7 +222,7 @@ def handle_result(result: dict):
 
     elif status == "valid_without_bus":
         logger.info(
-            f"âš ï¸  FEE UNPAID      | "
+            f"⚠️  FEE UNPAID      | "
             f"{result.get('name')} | "
             f"GR: {result.get('gr_no')} | "
             f"Fee: {result.get('fee_status')}"
@@ -231,7 +231,7 @@ def handle_result(result: dict):
 
     elif status == "invalid_person":
         logger.warning(
-            f"âŒ UNKNOWN PERSON  | "
+            f"❌ UNKNOWN PERSON  | "
             f"Score: {result.get('confidence', 0):.3f} | "
             f"{result.get('message', '')}"
         )
@@ -239,7 +239,7 @@ def handle_result(result: dict):
 
     elif status == "invalid_database":
         logger.warning(
-            f"ðŸ”´ NOT IN DATABASE | "
+            f"🔴 NOT IN DATABASE | "
             f"GR: {result.get('gr_no')} | "
             f"{result.get('message', '')}"
         )
@@ -249,9 +249,9 @@ def handle_result(result: dict):
         logger.warning(f"Unknown status from server: {status}")
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # GPIO SIGNAL (extend for your hardware)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def gpio_signal(color: str):
     """
     Drive GPIO pins based on result.
@@ -289,16 +289,16 @@ def gpio_signal(color: str):
     pass   # Remove this line once GPIO is wired
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # CONNECTION TEST
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def test_connection() -> bool:
     """
     Test if server is reachable via ngrok before starting main loop.
     Hits the /health endpoint.
     """
     url = Config.SERVER_URL.rstrip("/") + "/health"
-    logger.info(f"Testing connection to {url} â€¦")
+    logger.info(f"Testing connection to {url} …")
     try:
         r = requests.get(
             url,
@@ -308,7 +308,7 @@ def test_connection() -> bool:
         r.raise_for_status()
         data = r.json()
         logger.info(
-            f"Server reachable âœ… | "
+            f"Server reachable ✅ | "
             f"Students loaded: {data.get('students', '?')} | "
             f"Status: {data.get('status')}"
         )
@@ -319,19 +319,19 @@ def test_connection() -> bool:
         return False
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # MAIN LOOP
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 def main():
-    logger.info("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
-    logger.info("  TransBuddy Pi Client v3.0 â€“ Marwadi University")
-    logger.info("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+    logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    logger.info("  TransBuddy Pi Client v3.0 – Marwadi University")
+    logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
     validate_config()
 
     # Test server connectivity before starting camera
     if not test_connection():
-        logger.error("Aborting â€” fix server connection first.")
+        logger.error("Aborting — fix server connection first.")
         return
 
     cap = init_camera()
@@ -339,25 +339,25 @@ def main():
 
     try:
         while True:
-            # â”€â”€ Read frame â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Read frame ───────────────────────────────────────────────────
             ret, frame = cap.read()
             if not ret or frame is None:
-                logger.warning("Frame read failed â€” retrying â€¦")
+                logger.warning("Frame read failed — retrying …")
                 time.sleep(0.5)
                 continue
 
-            # â”€â”€ Face gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Face gate ─────────────────────────────────────────────────────
             if not has_valid_face(frame):
                 no_face_count += 1
                 if no_face_count % 20 == 0:
-                    logger.info(f"Waiting for face â€¦ ({no_face_count} frames scanned)")
+                    logger.info(f"Waiting for face … ({no_face_count} frames scanned)")
                 time.sleep(Config.NO_FACE_SLEEP_SEC)
                 continue
 
             no_face_count = 0
-            logger.info("Face detected â€” encoding and uploading â€¦")
+            logger.info("Face detected — encoding and uploading …")
 
-            # â”€â”€ Encode JPEG in memory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Encode JPEG in memory ─────────────────────────────────────────
             try:
                 jpeg_bytes = encode_jpeg(frame)
             except RuntimeError as e:
@@ -365,17 +365,17 @@ def main():
                 time.sleep(0.5)
                 continue
 
-            logger.info(f"Sending {len(jpeg_bytes) // 1024} KB to {Config.SERVER_URL} â€¦")
+            logger.info(f"Sending {len(jpeg_bytes) // 1024} KB to {Config.SERVER_URL} …")
 
-            # â”€â”€ Upload via ngrok â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Upload via ngrok ──────────────────────────────────────────────
             result = send_frame(jpeg_bytes)
 
             if result:
                 handle_result(result)
             else:
-                logger.warning("No valid response â€” will retry next cycle")
+                logger.warning("No valid response — will retry next cycle")
 
-            # â”€â”€ Wait before next capture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # ── Wait before next capture ──────────────────────────────────────
             time.sleep(Config.CAPTURE_SLEEP_SEC)
 
     except KeyboardInterrupt:
