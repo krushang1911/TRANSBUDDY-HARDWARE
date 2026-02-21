@@ -5,27 +5,24 @@ import time
 SERVER_URL = "https://dissuasive-osseous-ethelyn.ngrok-free.dev/upload"
 
 cap = cv2.VideoCapture(0)
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+cap.set(3, 640)
+cap.set(4, 480)
 
 while True:
     ret, frame = cap.read()
     if not ret:
         continue
 
-    cv2.imwrite("temp.jpg", frame)
+    _, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
 
     try:
-        with open("temp.jpg", "rb") as f:
-            response = requests.post(
-                SERVER_URL,
-                files={"image": f},
-                timeout=10
-            )
+        response = requests.post(
+            SERVER_URL,
+            files={"image": ("frame.jpg", buffer.tobytes(), "image/jpeg")},
+            timeout=4
+        )
+        print(response.json())
+    except:
+        print("Server unreachable")
 
-        print("Response:", response.json())
-
-    except Exception as e:
-        print("Error:", e)
-
-    time.sleep(2)
+    time.sleep(0.1)
