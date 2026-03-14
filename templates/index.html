@@ -1,680 +1,823 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TransBuddy – Bus Face Verification | Marwadi University</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>TransBuddy — Marwadi University</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#050d1a;--bg1:#0a1526;--bg2:#0f1d35;--bg3:#152440;--bg4:#1b2d4e;
+  --border:#1e3352;--border2:#253d61;
+  --cyan:#00d4ff;--cyan2:#00a8cc;--cyan3:#007999;
+  --blue:#3b82f6;--green:#00e676;--green2:#00b85a;
+  --amber:#ffaa00;--amber2:#cc8800;--red:#ff3b5c;--red2:#cc2040;
+  --purple:#a78bfa;--txt0:#e8f4ff;--txt1:#9bb4cc;--txt2:#5c7a96;--txt3:#3d5570;
+  --cr:14px;--sr:8px;
+  --font-main:'DM Sans',sans-serif;--font-head:'Rajdhani',sans-serif;--font-mono:'DM Mono',monospace;
+}
+html,body{background:var(--bg0);color:var(--txt0);font-family:var(--font-main);font-size:14px;line-height:1.6;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle at 1px 1px,rgba(0,212,255,0.07) 1px,transparent 0);background-size:32px 32px;pointer-events:none;z-index:0}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan3)}
 
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── SHELL ── */
+.shell{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:0 20px 40px}
 
-    :root {
-      --bg:     #0a0f1e;
-      --surf:   #111827;
-      --surf2:  #1a2235;
-      --border: #1e2d47;
-      --accent: #3b82f6;
-      --green:  #10b981;
-      --yellow: #f59e0b;
-      --red:    #ef4444;
-      --text:   #f1f5f9;
-      --muted:  #64748b;
-      --r:      12px;
-    }
+/* ── HEADER ── */
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:22px;flex-wrap:wrap}
+.header-brand{display:flex;align-items:center;gap:14px}
+.brand-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--cyan3),var(--cyan));border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-icon svg{width:24px;height:24px;fill:#050d1a}
+.brand-text h1{font-family:var(--font-head);font-size:26px;font-weight:700;letter-spacing:1px;color:var(--txt0);line-height:1}
+.brand-text p{font-size:12px;color:var(--txt2);letter-spacing:0.5px;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.server-status{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:40px;padding:6px 14px;font-size:12px;font-family:var(--font-mono)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse-dot 2s ease-in-out infinite}
+.status-dot.offline{background:var(--red);animation:none}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,230,118,.5)}50%{opacity:.8;box-shadow:0 0 0 4px rgba(0,230,118,0)}}
+.clock-display{font-family:var(--font-mono);font-size:13px;color:var(--cyan);background:var(--bg2);border:1px solid var(--border);border-radius:40px;padding:6px 14px}
 
-    html, body {
-      height: 100%;
-      font-family: "Inter", system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
+/* ── CARDS ── */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--cr);overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px 11px;border-bottom:1px solid var(--border);background:var(--bg2);gap:8px}
+.card-title{display:flex;align-items:center;gap:8px;font-family:var(--font-head);font-size:15px;font-weight:600;letter-spacing:0.5px;color:var(--txt0)}
+.card-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.card-badge{font-family:var(--font-mono);font-size:11px;padding:3px 8px;border-radius:20px;background:var(--bg3);border:1px solid var(--border);color:var(--txt1);white-space:nowrap}
 
-    /* ──────────────── HEADER */
-    header {
-      background: var(--surf);
-      border-bottom: 1px solid var(--border);
-      padding: 13px 26px;
-      display: flex; align-items: center; gap: 13px;
-    }
-    .logo {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6, #7c3aed);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 19px; flex-shrink: 0;
-    }
-    header h1 { font-size: 1.1rem; font-weight: 700; }
-    header p  { font-size: .73rem; color: var(--muted); }
-    .hdr-r    { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-    .live-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--green); box-shadow: 0 0 6px var(--green);
-      animation: blink 1.4s infinite;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-    #clock { font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* ── STAT STRIP ── */
+.stat-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+.stat-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--cr);padding:16px 18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--cr) var(--cr) 0 0}
+.stat-card.s-green::before{background:var(--green)}
+.stat-card.s-amber::before{background:var(--amber)}
+.stat-card.s-red::before{background:var(--red)}
+.stat-card.s-cyan::before{background:var(--cyan)}
+.stat-card.s-purple::before{background:var(--purple)}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--txt2);font-family:var(--font-head);font-weight:600;margin-bottom:8px}
+.stat-value{font-family:var(--font-head);font-size:38px;font-weight:700;line-height:1;margin-bottom:4px}
+.stat-card.s-green .stat-value{color:var(--green)}
+.stat-card.s-amber .stat-value{color:var(--amber)}
+.stat-card.s-red .stat-value{color:var(--red)}
+.stat-card.s-cyan .stat-value{color:var(--cyan)}
+.stat-card.s-purple .stat-value{color:var(--purple)}
+.stat-sub{font-size:11px;color:var(--txt2)}
+.stat-icon{position:absolute;right:14px;bottom:12px;opacity:0.07;font-size:48px;line-height:1;pointer-events:none}
 
-    /* ──────────────── LAYOUT */
-    main {
-      display: grid;
-      grid-template-columns: 1fr 1fr 320px;
-      grid-template-rows: auto auto auto 1fr;
-      gap: 16px;
-      padding: 18px 24px;
-      max-width: 1500px;
-      margin: 0 auto;
-    }
+/* ── MAIN ROW ── */
+.main-row{display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:22px}
+.left-col{display:flex;flex-direction:column;gap:20px}
+.right-col{display:flex;flex-direction:column;gap:20px}
 
-    /* ──────────────── CARD */
-    .card {
-      background: var(--surf);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 16px;
-    }
-    .card-title {
-      font-size: .66rem; font-weight: 600;
-      letter-spacing: .08em; text-transform: uppercase;
-      color: var(--muted); margin-bottom: 12px;
-    }
+/* ── FEED ── */
+.feed-wrapper{position:relative;background:#000;aspect-ratio:16/9;border-radius:10px;overflow:hidden}
+#live-img{width:100%;height:100%;object-fit:cover;display:block}
+.feed-overlay{position:absolute;inset:0;pointer-events:none}
+.feed-overlay::before,.feed-overlay::after{content:'';position:absolute;width:24px;height:24px;border-color:var(--cyan);border-style:solid;opacity:.7}
+.feed-overlay::before{top:10px;left:10px;border-width:2px 0 0 2px}
+.feed-overlay::after{bottom:10px;right:10px;border-width:0 2px 2px 0}
+.feed-corners-2::before,.feed-corners-2::after{content:'';position:absolute;width:24px;height:24px;border-color:var(--cyan);border-style:solid;opacity:.7}
+.feed-corners-2::before{top:10px;right:10px;border-width:2px 2px 0 0}
+.feed-corners-2::after{bottom:10px;left:10px;border-width:0 0 2px 2px}
+.feed-badge{position:absolute;top:14px;right:50%;transform:translateX(50%);background:rgba(255,59,92,.9);color:#fff;font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
+.live-blink{width:6px;height:6px;background:#fff;border-radius:50%;animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.feed-ts{position:absolute;bottom:12px;left:14px;font-family:var(--font-mono);font-size:11px;color:rgba(255,255,255,.6)}
+.feed-stop{position:absolute;bottom:12px;right:14px;font-family:var(--font-head);font-size:12px;color:rgba(0,212,255,.9);font-weight:600;max-width:200px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--txt3);font-size:13px}
 
-    /* ──────────────── BANNER */
-    #banner {
-      grid-column: 1 / -1;
-      display: flex; align-items: center; gap: 14px;
-      padding: 14px 18px;
-      border-radius: var(--r);
-      border: 1px solid var(--border);
-      background: var(--surf);
-      transition: background .3s, border-color .3s;
-    }
-    #banner[data-s="valid_with_bus"]    { border-color: var(--green);  background: rgba(16,185,129,.08); }
-    #banner[data-s="valid_without_bus"] { border-color: var(--yellow); background: rgba(245,158,11,.08); }
-    #banner[data-s="invalid_person"],
-    #banner[data-s="invalid_database"]  { border-color: var(--red);    background: rgba(239,68,68,.08);  }
-    #b-icon  { font-size: 1.9rem; }
-    #b-title { font-size: 1.05rem; font-weight: 700; }
-    #b-msg   { font-size: .77rem; color: var(--muted); margin-top: 2px; }
-    #b-right { margin-left: auto; text-align: right; }
-    #b-conf  { font-size: 1.4rem; font-weight: 700; }
-    #b-right small { font-size: .65rem; color: var(--muted); display: block; }
+/* ── SCAN RESULTS ── */
+.scan-idle{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 20px;color:var(--txt3);gap:10px;font-size:13px;text-align:center}
+.face-results{display:flex;flex-direction:column;gap:10px}
+.face-result-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;display:flex;gap:12px;padding:12px;align-items:flex-start;position:relative;overflow:hidden;transition:border-color .3s;animation:slide-in .3s ease}
+@keyframes slide-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.face-result-card.status-valid_with_bus{border-color:rgba(0,230,118,.4)}
+.face-result-card.status-valid_without_bus{border-color:rgba(255,170,0,.4)}
+.face-result-card.status-invalid_person{border-color:rgba(255,59,92,.4)}
+.face-result-card.status-invalid_database{border-color:rgba(167,139,250,.4)}
+.face-result-card.status-not_uni{border-color:rgba(0,212,255,.4)}
+.face-result-card.status-on_cooldown{border-color:rgba(91,125,155,.4)}
+.face-result-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.status-valid_with_bus::before{background:var(--green)}
+.status-valid_without_bus::before{background:var(--amber)}
+.status-invalid_person::before{background:var(--red)}
+.status-invalid_database::before{background:var(--purple)}
+.status-not_uni::before{background:var(--cyan)}
+.status-on_cooldown::before{background:var(--txt3)}
+.face-thumb{width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--bg3);border:1px solid var(--border)}
+.face-info{flex:1;min-width:0}
+.face-name{font-family:var(--font-head);font-size:15px;font-weight:600;color:var(--txt0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.face-gr{font-family:var(--font-mono);font-size:11px;color:var(--txt2);margin-bottom:6px}
+.face-meta{display:flex;gap:6px;flex-wrap:wrap}
+.face-tag{font-size:10px;font-family:var(--font-head);font-weight:600;letter-spacing:.5px;padding:2px 7px;border-radius:4px;background:var(--bg3);color:var(--txt2);border:1px solid var(--border)}
+.face-status{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.status-pill{font-family:var(--font-head);font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:4px 8px;border-radius:5px;white-space:nowrap}
+.pill-green{background:rgba(0,230,118,.15);color:var(--green);border:1px solid rgba(0,230,118,.3)}
+.pill-amber{background:rgba(255,170,0,.15);color:var(--amber);border:1px solid rgba(255,170,0,.3)}
+.pill-red{background:rgba(255,59,92,.15);color:var(--red);border:1px solid rgba(255,59,92,.3)}
+.pill-purple{background:rgba(167,139,250,.15);color:var(--purple);border:1px solid rgba(167,139,250,.3)}
+.pill-gray{background:rgba(91,125,155,.15);color:var(--txt2);border:1px solid rgba(91,125,155,.3)}
+.pill-cyan{background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.3)}
+.conf-bar-wrap{margin-top:6px;height:3px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.conf-bar{height:100%;border-radius:2px;transition:width .5s ease}
+.multi-badge{font-family:var(--font-head);font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;background:rgba(0,212,255,.12);color:var(--cyan);border:1px solid rgba(0,212,255,.25)}
 
-    /* ──────────────── STATS */
-    .stats-row {
-      grid-column: 1 / -1;
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
-    }
-    .stat {
-      background: var(--surf); border: 1px solid var(--border);
-      border-radius: var(--r); padding: 13px 16px;
-      display: flex; align-items: center; gap: 11px;
-    }
-    .s-icon {
-      width: 38px; height: 38px; border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.25rem; flex-shrink: 0;
-    }
-    .s-icon.blue   { background: rgba(59,130,246,.15); }
-    .s-icon.green  { background: rgba(16,185,129,.15); }
-    .s-icon.yellow { background: rgba(245,158,11,.15); }
-    .s-icon.red    { background: rgba(239,68,68,.15);  }
-    .s-val   { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .s-label { font-size: .66rem; color: var(--muted); margin-top: 2px; }
+/* ── GPS PANEL ── */
+.gps-panel{display:flex;flex-direction:column;gap:10px;padding:14px 16px}
+.gps-stop-name{font-family:var(--font-head);font-size:20px;font-weight:700;color:var(--cyan);line-height:1.2}
+.gps-coords{font-family:var(--font-mono);font-size:11px;color:var(--txt2);display:flex;gap:12px}
+.gps-meta-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gps-meta-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.gps-meta-label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--txt3);font-family:var(--font-head);font-weight:600;margin-bottom:2px}
+.gps-meta-val{font-size:13px;font-weight:500;color:var(--txt0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quality-ring{display:flex;align-items:center;gap:10px}
+.quality-num{font-family:var(--font-head);font-size:22px;font-weight:700;color:var(--cyan);min-width:50px}
+.quality-bar-wrap{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.quality-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan2),var(--cyan));transition:width .6s ease}
+.gps-no-data{padding:30px 16px;text-align:center;color:var(--txt3);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.gps-live-indicator{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;color:var(--txt2)}
+.gps-pulse{width:10px;height:10px;border-radius:50%;background:var(--cyan);position:relative;flex-shrink:0}
+.gps-pulse::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1.5px solid var(--cyan);animation:gps-ring 1.5s ease-out infinite}
+@keyframes gps-ring{0%{transform:scale(.5);opacity:1}100%{transform:scale(2);opacity:0}}
 
-    /* ──────────────── CAMERA PANELS */
+/* ── BOTTOM ROW — 4 columns ── */
+.bottom-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
 
-    /* Live Feed */
-    .cam-card {
-      background: var(--surf);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      overflow: hidden;
-      display: flex; flex-direction: column;
-    }
-    .cam-header {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 8px;
-    }
-    .cam-header span { font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-    .cam-header .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
-    .cam-header .dot.live { background: var(--green); animation: blink 1.4s infinite; }
-    .cam-body { flex: 1; position: relative; background: #000; min-height: 240px; }
-    .cam-body img, .cam-body video {
-      width: 100%; height: 100%; object-fit: cover; display: block;
-      min-height: 240px; max-height: 300px;
-    }
-    .cam-overlay {
-      position: absolute; bottom: 8px; left: 8px;
-      background: rgba(0,0,0,.65);
-      color: #fff; font-size: .62rem; font-weight: 600;
-      letter-spacing: .05em; text-transform: uppercase;
-      padding: 3px 8px; border-radius: 4px;
-    }
-    .no-feed {
-      width: 100%; min-height: 240px;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 8px; color: var(--muted); font-size: .8rem;
-    }
-    .no-feed-icon { font-size: 2.5rem; opacity: .35; }
+/* ── STUDENT LIST ── */
+.student-list{display:flex;flex-direction:column;gap:1px}
+.stu-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg1);border-bottom:1px solid var(--border);transition:background .15s;animation:fade-in .3s ease}
+.stu-item:last-child{border-bottom:none}
+.stu-item:hover{background:var(--bg2)}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+.stu-avatar{width:36px;height:36px;border-radius:8px;object-fit:cover;background:var(--bg3);border:1px solid var(--border);flex-shrink:0}
+.stu-avatar-placeholder{width:36px;height:36px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--txt2)}
+.stu-body{flex:1;min-width:0}
+.stu-name{font-family:var(--font-head);font-size:14px;font-weight:600;color:var(--txt0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stu-sub{font-size:11px;color:var(--txt2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stu-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.stu-ts{font-family:var(--font-mono);font-size:10px;color:var(--txt3)}
+.stu-stop{font-size:10px;color:var(--cyan2);max-width:90px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-scroll{max-height:380px;overflow-y:auto}
+.empty-state{padding:40px 20px;text-align:center;color:var(--txt3);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.count-badge{font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bg3);color:var(--txt2);border:1px solid var(--border)}
+.reason-tag{font-size:10px;font-family:var(--font-head);font-weight:600;letter-spacing:.5px;padding:2px 6px;border-radius:4px}
+.rt-nodb{background:rgba(167,139,250,.15);color:var(--purple)}
+.rt-nobus{background:rgba(255,170,0,.15);color:var(--amber)}
+.rt-unknown{background:rgba(255,59,92,.15);color:var(--red)}
+.conn-toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--red);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--red);z-index:1000;opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s;pointer-events:none}
+.conn-toast.show{opacity:1;transform:translateY(0)}
 
-    /* Comparison row: captured vs enrollment */
-    .compare-row {
-      grid-column: 1 / 3;
-      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
-    }
-
-    /* Match pill */
-    .match-bar {
-      grid-column: 1 / 3;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .ml { flex: 1; height: 1px; background: var(--border); }
-    .match-pill {
-      padding: 4px 16px; border-radius: 999px;
-      font-size: .72rem; font-weight: 600; white-space: nowrap;
-    }
-    .mp-idle   { background: rgba(100,116,139,.15); color: var(--muted); }
-    .mp-green  { background: rgba(16,185,129,.15);  color: var(--green); }
-    .mp-yellow { background: rgba(245,158,11,.15);  color: var(--yellow); }
-    .mp-red    { background: rgba(239,68,68,.15);   color: var(--red); }
-
-    /* ──────────────── STUDENT PANEL */
-    #info-card { grid-column: 3; grid-row: 3 / 6; }
-    .avatar {
-      width: 72px; height: 72px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent), #7c3aed);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.7rem; margin-bottom: 12px;
-      overflow: hidden;
-      border: 3px solid var(--border);
-      transition: border-color 0.3s, box-shadow 0.3s;
-      flex-shrink: 0;
-    }
-    .avatar img {
-      width: 100%; height: 100%;
-      object-fit: cover; display: block;
-    }
-    .avatar.av-green  { border-color: var(--green);  box-shadow: 0 0 14px rgba(16,185,129,.45); }
-    .avatar.av-yellow { border-color: var(--yellow); box-shadow: 0 0 14px rgba(245,158,11,.45); }
-    .avatar.av-red    { border-color: var(--red);    box-shadow: 0 0 14px rgba(239,68,68,.35);  }
-    #stu-name { font-size: 1.15rem; font-weight: 700; }
-    #stu-gr   { font-size: .72rem; color: var(--muted); font-family: monospace; margin-top: 2px; }
-    .det-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-    .det label {
-      font-size: .6rem; font-weight: 600; letter-spacing: .07em;
-      text-transform: uppercase; color: var(--muted);
-      display: block; margin-bottom: 3px;
-    }
-    .det .val { font-size: .82rem; font-weight: 500; }
-    .fee-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 2px 9px; border-radius: 999px;
-      font-size: .72rem; font-weight: 600;
-    }
-    .fee-paid   { background: rgba(16,185,129,.15); color: var(--green); }
-    .fee-unpaid { background: rgba(239,68,68,.15);  color: var(--red); }
-    .conf-bar-w { display: flex; align-items: center; gap: 6px; }
-    .cbar { width: 54px; height: 4px; background: var(--border); border-radius: 3px; overflow: hidden; }
-    .cfill { height: 100%; border-radius: 3px; background: var(--accent); transition: width .3s; }
-
-    /* ──────────────── LOG TABLE */
-    #log-card { grid-column: 1 / 3; }
-    table { width: 100%; border-collapse: collapse; font-size: .78rem; }
-    thead th {
-      text-align: left; padding: 7px 9px;
-      font-size: .63rem; font-weight: 600; letter-spacing: .07em;
-      text-transform: uppercase; color: var(--muted);
-      border-bottom: 1px solid var(--border);
-    }
-    tbody tr { border-bottom: 1px solid rgba(255,255,255,.04); transition: background .15s; }
-    tbody tr:hover { background: var(--surf2); }
-    tbody td { padding: 8px 9px; vertical-align: middle; }
-    .sp {
-      padding: 2px 8px; border-radius: 999px;
-      font-size: .66rem; font-weight: 600;
-    }
-    .sp-g { background: rgba(16,185,129,.15); color: var(--green); }
-    .sp-y { background: rgba(245,158,11,.15);  color: var(--yellow); }
-    .sp-r { background: rgba(239,68,68,.15);   color: var(--red); }
-    .thumb {
-      width: 34px; height: 34px; border-radius: 6px;
-      object-fit: cover; border: 1px solid var(--border);
-    }
-    .nothumb {
-      width: 34px; height: 34px; border-radius: 6px;
-      background: var(--surf2); border: 1px solid var(--border);
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: .9rem;
-    }
-    .no-data td { text-align: center; color: var(--muted); padding: 26px; }
-
-    /* ──────────────── FOOTER */
-    footer {
-      text-align: center; padding: 9px;
-      font-size: .68rem; color: var(--muted);
-      border-top: 1px solid var(--border);
-    }
-
-    @keyframes slideIn { from { opacity:0; transform:translateY(-5px) } to { opacity:1; transform:none } }
-    .anim { animation: slideIn .3s ease; }
-
-    @media(max-width: 1100px) {
-      main { grid-template-columns: 1fr 1fr; }
-      #info-card { grid-column: 1 / -1; grid-row: auto; }
-      .compare-row { grid-column: 1 / -1; }
-      .match-bar { grid-column: 1 / -1; }
-      #log-card { grid-column: 1 / -1; }
-    }
-    @media(max-width: 700px) {
-      main { grid-template-columns: 1fr; padding: 12px; }
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .compare-row { grid-template-columns: 1fr; }
-    }
-  </style>
+/* ── RESPONSIVE ── */
+@media(max-width:1300px){.stat-strip{grid-template-columns:repeat(3,1fr)}.main-row{grid-template-columns:1fr}.bottom-row{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.stat-strip{grid-template-columns:1fr 1fr}.bottom-row{grid-template-columns:1fr}.header-right{display:none}}
+</style>
 </head>
 <body>
+<div class="shell">
 
 <!-- HEADER -->
-<header>
-  <div class="logo">🚌</div>
-  <div>
-    <h1>TransBuddy Face Verification</h1>
-    <p>Marwadi University – Bus Access Control</p>
+<header class="header">
+  <div class="header-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 001 1h1a1 1 0 001-1v-1h8v1a1 1 0 001 1h1a1 1 0 001-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4S4 2.5 4 6zm3.5 1a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm9 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM17 13H7V6h10v7z"/></svg>
+    </div>
+    <div class="brand-text">
+      <h1>TRANSBUDDY</h1>
+      <p>MARWADI UNIVERSITY — BUS ACCESS CONTROL SYSTEM</p>
+    </div>
   </div>
-  <div class="hdr-r">
-    <div class="live-dot"></div>
-    <span style="font-size:.7rem;color:var(--muted)">Live</span>
-    <span id="clock">--:--:--</span>
+  <div class="header-right">
+    <div class="server-status">
+      <div class="status-dot" id="server-dot"></div>
+      <span id="server-label" style="color:var(--txt1)">Connecting…</span>
+    </div>
+    <div class="clock-display" id="clock">--:--:--</div>
   </div>
 </header>
 
-<main>
-
-  <!-- ── BANNER -->
-  <div id="banner" data-s="idle">
-    <div id="b-icon">⏳</div>
-    <div>
-      <div id="b-title">Waiting for scan…</div>
-      <div id="b-msg">System ready. Awaiting camera input from Raspberry Pi.</div>
-    </div>
-    <div id="b-right">
-      <div id="b-conf">—</div>
-      <small>Confidence</small>
-    </div>
+<!-- STAT STRIP -->
+<div class="stat-strip">
+  <div class="stat-card s-green">
+    <div class="stat-label">Access Granted</div>
+    <div class="stat-value" id="s-valid">0</div>
+    <div class="stat-sub">Bus + fee paid</div>
+    <div class="stat-icon">✓</div>
   </div>
-
-  <!-- ── STATS -->
-  <div class="stats-row">
-    <div class="stat"><div class="s-icon blue">🔍</div><div><div class="s-val" id="st-total">0</div><div class="s-label">Total Scans</div></div></div>
-    <div class="stat"><div class="s-icon green">✅</div><div><div class="s-val" id="st-valid">0</div><div class="s-label">Granted</div></div></div>
-    <div class="stat"><div class="s-icon yellow">⚠️</div><div><div class="s-val" id="st-nofee">0</div><div class="s-label">Fee Unpaid</div></div></div>
-    <div class="stat"><div class="s-icon red">❌</div><div><div class="s-val" id="st-inv">0</div><div class="s-label">Rejected</div></div></div>
+  <div class="stat-card s-amber">
+    <div class="stat-label">Unpaid Fee</div>
+    <div class="stat-value" id="s-unpaid">0</div>
+    <div class="stat-sub">Bus user, fee pending</div>
+    <div class="stat-icon">₹</div>
   </div>
-
-  <!-- ── LIVE FEED (Raspberry Pi camera stream) -->
-  <div class="cam-card">
-    <div class="cam-header">
-      <div class="dot live"></div>
-      <span>Live Camera – Raspberry Pi</span>
-    </div>
-    <div class="cam-body">
-      <img id="live-img" src="/live_feed"
-           alt="Live Feed"
-           onerror="this.style.display='none'; document.getElementById('no-live').style.display='flex'"/>
-      <div id="no-live" class="no-feed" style="display:none">
-        <div class="no-feed-icon">📡</div>
-        <span>Waiting for Raspberry Pi connection…</span>
-      </div>
-      <div class="cam-overlay">📡 Live</div>
-    </div>
+  <div class="stat-card s-red">
+    <div class="stat-label">Invalid Alerts</div>
+    <div class="stat-value" id="s-invalid">0</div>
+    <div class="stat-sub">DB / no bus policy</div>
+    <div class="stat-icon">!</div>
   </div>
+  <div class="stat-card s-cyan">
+    <div class="stat-label">Unknown Person</div>
+    <div class="stat-value" id="s-notuni">0</div>
+    <div class="stat-sub">Not enrolled</div>
+    <div class="stat-icon">?</div>
+  </div>
+  <div class="stat-card s-purple">
+    <div class="stat-label">On Cooldown</div>
+    <div class="stat-value" id="s-cooldown">0</div>
+    <div class="stat-sub">Recently processed</div>
+    <div class="stat-icon">⏱</div>
+  </div>
+</div>
 
-  <!-- ── CAPTURED FRAME (last frame processed) -->
-  <div class="cam-card">
-    <div class="cam-header">
-      <div class="dot" id="cap-dot"></div>
-      <span>Last Captured Frame</span>
-    </div>
-    <div class="cam-body">
-      <div id="cap-wrap">
-        <div class="no-feed">
-          <div class="no-feed-icon">📷</div>
-          <span>No capture yet</span>
+<!-- MAIN ROW -->
+<div class="main-row">
+  <!-- LEFT -->
+  <div class="left-col">
+
+    <!-- Camera feed -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="dot" style="background:var(--red);animation:blink 1s step-end infinite"></div>
+          LIVE CAMERA FEED
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div id="feed-stop-label" class="card-badge" style="color:var(--cyan2)">—</div>
+          <div class="card-badge" id="feed-time">—</div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- ── COMPARISON: Captured vs Enrollment -->
-  <div class="compare-row">
-
-    <!-- Captured -->
-    <div class="cam-card">
-      <div class="cam-header">
-        <div class="dot" id="cmp-cap-dot"></div>
-        <span>Captured Frame (Pi)</span>
-      </div>
-      <div class="cam-body" id="cmp-cap-body">
-        <div class="no-feed">
-          <div class="no-feed-icon">📷</div>
-          <span>Awaiting scan</span>
+      <div style="padding:12px">
+        <div class="feed-wrapper">
+          <div class="feed-overlay"></div>
+          <div class="feed-corners-2"></div>
+          <div class="feed-badge"><div class="live-blink"></div>LIVE</div>
+          <img id="live-img" src="/live_feed" alt="Live" onerror="showFeedPh()" style="display:none"/>
+          <div id="feed-ph" class="feed-placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="var(--txt3)"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg>
+            <span>Waiting for camera stream…</span>
+          </div>
+          <div class="feed-ts" id="feed-ts">—</div>
+          <div class="feed-stop" id="feed-stop-ov">—</div>
         </div>
       </div>
     </div>
 
-    <!-- Enrollment -->
-    <div class="cam-card">
-      <div class="cam-header">
-        <div class="dot" style="background:var(--accent)"></div>
-        <span>Enrollment Photo (Database)</span>
+    <!-- Latest scan results -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="dot" style="background:var(--cyan)"></div>
+          LATEST SCAN RESULTS
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span id="scan-multi" style="display:none" class="multi-badge">MULTI-FACE</span>
+          <span class="card-badge" id="scan-cnt">—</span>
+        </div>
       </div>
-      <div class="cam-body" id="cmp-enr-body">
-        <div class="no-feed">
-          <div class="no-feed-icon">🎓</div>
-          <span>No match yet</span>
+      <div id="scan-body" style="padding:14px 16px">
+        <div class="scan-idle" id="scan-idle">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="var(--txt3)"><path d="M9 2a5 5 0 100 10A5 5 0 009 2zm0 12c-3.33 0-10 1.67-10 5v2h20v-2c0-3.33-6.67-5-10-5zm12-5h-2V7h-2V5h2V3h2v2h2v2h-2v2z"/></svg>
+          <span>Awaiting scan…</span>
+          <span style="font-family:var(--font-mono);font-size:10px">Polls /upload_status every 2s</span>
+        </div>
+        <div id="scan-list" class="face-results" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-col">
+
+    <!-- Bus location -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="dot" style="background:var(--cyan)"></div>
+          BUS LOCATION
+        </div>
+        <div class="gps-live-indicator">
+          <div class="gps-pulse" id="gps-pulse" style="background:var(--txt3)"></div>
+          <span id="gps-updated">—</span>
+        </div>
+      </div>
+      <div id="gps-panel">
+        <div class="gps-no-data">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="var(--txt3)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+          <span>Waiting for GPS…</span>
         </div>
       </div>
     </div>
 
-  </div>
+    <!-- Last scan location -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="dot" style="background:var(--amber)"></div>
+          LAST SCAN LOCATION
+        </div>
+      </div>
+      <div id="scan-loc-panel">
+        <div class="gps-no-data" style="padding:24px 0"><span>No scan yet</span></div>
+      </div>
+    </div>
 
-  <!-- ── MATCH PILL -->
-  <div class="match-bar">
-    <div class="ml"></div>
-    <div id="match-pill" class="match-pill mp-idle">Awaiting scan</div>
-    <div class="ml"></div>
   </div>
+</div>
 
-  <!-- ── STUDENT INFO -->
-  <div class="card" id="info-card">
-    <div class="card-title">Student Details</div>
-    <div class="avatar" id="stu-avatar">👤</div>
-    <div id="stu-name">—</div>
-    <div id="stu-gr">GR No.: —</div>
-    <div class="det-grid">
-      <div class="det"><label>Department</label><div class="val" id="d-dept">—</div></div>
-      <div class="det"><label>Year</label><div class="val" id="d-year">—</div></div>
-      <div class="det"><label>Route</label><div class="val" id="d-route">—</div></div>
-      <div class="det"><label>Fee Status</label><div class="val" id="d-fee">—</div></div>
-      <div class="det"><label>Match Score</label><div class="val" id="d-score">—</div></div>
-      <div class="det"><label>Last Scan</label><div class="val" id="d-time">—</div></div>
+<!-- BOTTOM ROW — 4 columns -->
+<div class="bottom-row">
+
+  <!-- Route E: Valid / Access Granted -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="dot" style="background:var(--green)"></div>
+        ACCESS GRANTED
+      </div>
+      <span class="count-badge" id="valid-count">0</span>
+    </div>
+    <div class="list-scroll" id="valid-list">
+      <div class="empty-state">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+        <span>No granted access yet</span>
+      </div>
     </div>
   </div>
 
-  <!-- ── LOG TABLE -->
-  <div class="card" id="log-card">
-    <div class="card-title">Recognition Log (last 50)</div>
-    <div style="overflow-x:auto">
-      <table>
-        <thead>
-          <tr>
-            <th>Frame</th>
-            <th>Enrollment</th>
-            <th>Time</th>
-            <th>GR No.</th>
-            <th>Name</th>
-            <th>Status</th>
-            <th>Confidence</th>
-          </tr>
-        </thead>
-        <tbody id="log-body">
-          <tr class="no-data"><td colspan="7">No scans yet…</td></tr>
-        </tbody>
-      </table>
+  <!-- Route D: Unpaid -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="dot" style="background:var(--amber)"></div>
+        UNPAID STUDENTS
+      </div>
+      <span class="count-badge" id="unpaid-count">0</span>
+    </div>
+    <div class="list-scroll" id="unpaid-list">
+      <div class="empty-state">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+        <span>No unpaid students</span>
+      </div>
     </div>
   </div>
 
-</main>
+  <!-- Route B+C: Invalid -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="dot" style="background:var(--red)"></div>
+        INVALID ALERTS
+      </div>
+      <span class="count-badge" id="invalid-count">0</span>
+    </div>
+    <div class="list-scroll" id="invalid-list">
+      <div class="empty-state">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        <span>No invalid alerts</span>
+      </div>
+    </div>
+  </div>
 
-<footer>
-  TransBuddy v3.0 &nbsp;|&nbsp; Marwadi University &nbsp;|&nbsp;
-  Polling every 2s &nbsp;|&nbsp; <span id="last-poll">—</span>
-</footer>
+  <!-- Route A: Unknown -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <div class="dot" style="background:var(--cyan)"></div>
+        UNKNOWN PERSONS
+      </div>
+      <span class="count-badge" id="notuni-count">0</span>
+    </div>
+    <div class="list-scroll" id="notuni-list">
+      <div class="empty-state">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg>
+        <span>No unknown persons</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<div class="conn-toast" id="conn-toast">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+  Server offline — retrying…
+</div>
 
 <script>
-"use strict";
+/* ══════════════════════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════════════════════ */
+const BASE = '';  // set to 'http://SERVER_IP:5000' if different origin
 
-const POLL_MS = 2000;
-let lastTs    = null;
-let stats     = { total:0, valid:0, nofee:0, inv:0 };
+/* ══════════════════════════════════════════════════════════════
+   SESSION STATS
+══════════════════════════════════════════════════════════════ */
+const stats = { valid:0, unpaid:0, invalid:0, notuni:0, cooldown:0 };
+let _lastStatsTs = null;
 
-const $ = id => document.getElementById(id);
-
-const DOM = {
-  banner:      $("banner"),
-  bIcon:       $("b-icon"),
-  bTitle:      $("b-title"),
-  bMsg:        $("b-msg"),
-  bConf:       $("b-conf"),
-  capWrap:     $("cap-wrap"),
-  cmpCapBody:  $("cmp-cap-body"),
-  cmpEnrBody:  $("cmp-enr-body"),
-  matchPill:   $("match-pill"),
-  capDot:      $("cap-dot"),
-  cmpCapDot:   $("cmp-cap-dot"),
-  logBody:     $("log-body"),
-  avatar:      $("stu-avatar"),
-  name:        $("stu-name"),
-  gr:          $("stu-gr"),
-  dept:        $("d-dept"),
-  year:        $("d-year"),
-  route:       $("d-route"),
-  fee:         $("d-fee"),
-  score:       $("d-score"),
-  time:        $("d-time"),
-  stTotal:     $("st-total"),
-  stValid:     $("st-valid"),
-  stNofee:     $("st-nofee"),
-  stInv:       $("st-inv"),
-  lastPoll:    $("last-poll"),
-};
-
-// Clock
+/* ══════════════════════════════════════════════════════════════
+   CLOCK
+══════════════════════════════════════════════════════════════ */
 setInterval(() => {
-  $("clock").textContent = new Date().toLocaleTimeString("en-IN",{hour12:false});
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-IN',{hour12:false});
 }, 1000);
 
-const CFG = {
-  valid_with_bus:    { icon:"✅", title:"Access Granted – Bus Allowed",  pill:"mp-green",  pillTxt:"✅ MATCH – BUS ACCESS GRANTED",  dot:"var(--green)",  sp:"sp-g", short:"With Bus"  },
-  valid_without_bus: { icon:"⚠️", title:"Identity OK – Fee Unpaid",      pill:"mp-yellow", pillTxt:"⚠️ MATCH – FEE NOT PAID",        dot:"var(--yellow)", sp:"sp-y", short:"No Bus"    },
-  invalid_person:    { icon:"❌", title:"Unknown Person",                  pill:"mp-red",    pillTxt:"❌ NO MATCH – UNKNOWN PERSON",    dot:"var(--red)",    sp:"sp-r", short:"Invalid"   },
-  invalid_database:  { icon:"🔴", title:"Not Found in Database",           pill:"mp-red",    pillTxt:"🔴 MATCHED BUT NOT IN DATABASE", dot:"var(--red)",    sp:"sp-r", short:"No DB"     },
-  idle:              { icon:"⏳", title:"Waiting for scan…",               pill:"mp-idle",   pillTxt:"Awaiting scan",                  dot:"var(--muted)",  sp:"",     short:"Idle"      },
-};
+/* ══════════════════════════════════════════════════════════════
+   LIVE FEED
+══════════════════════════════════════════════════════════════ */
+const liveImg = document.getElementById('live-img');
+const feedPh  = document.getElementById('feed-ph');
 
-function fmtTime(iso) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("en-IN", {hour12:false});
+function startLiveFeed() {
+  liveImg.src = BASE + '/live_feed?' + Date.now();
+  liveImg.onload  = () => { liveImg.style.display='block'; feedPh.style.display='none'; };
+  liveImg.onerror = showFeedPh;
+}
+function showFeedPh() {
+  liveImg.style.display='none'; feedPh.style.display='flex';
+  setTimeout(startLiveFeed, 5000);
+}
+startLiveFeed();
+
+/* ══════════════════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════════════════ */
+function fmtTs(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleTimeString('en-IN',{hour12:false}); }
+  catch { return iso.slice(11,19)||'—'; }
+}
+function initials(n) {
+  if (!n) return '?';
+  return n.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+}
+function avatarHtml(b64, name) {
+  if (b64) return `<img class="stu-avatar" src="${b64}" onerror="this.style.display='none'"/>`;
+  return `<div class="stu-avatar-placeholder">${initials(name)}</div>`;
+}
+function thumbHtml(b64, name) {
+  if (!b64) return `<div style="width:56px;height:56px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="var(--txt3)"><path d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg></div>`;
+  return `<img class="face-thumb" src="${b64}" onerror="this.style.display='none'"/>`;
 }
 
-function confHTML(conf) {
-  if (conf === null || conf === undefined) return "—";
-  const p = Math.round(conf * 100);
-  return `<div class="conf-bar-w">
-    <div class="cbar"><div class="cfill" style="width:${p}%"></div></div>
-    <span>${p}%</span>
+/* ══════════════════════════════════════════════════════════════
+   PILL + REASON
+══════════════════════════════════════════════════════════════ */
+function pillHtml(status, category) {
+  if (category==='no_bus_policy')   return `<span class="status-pill pill-amber">NO BUS</span>`;
+  if (category==='not_in_db')       return `<span class="status-pill pill-purple">NOT IN DB</span>`;
+  if (category==='not_uni_student') return `<span class="status-pill pill-cyan">NOT ENROLLED</span>`;
+  if (category==='unpaid_fee')      return `<span class="status-pill pill-amber">FEE UNPAID</span>`;
+  const m = {
+    valid_with_bus:    ['pill-green', 'GRANTED'],
+    valid_without_bus: ['pill-amber', 'UNPAID'],
+    invalid_person:    ['pill-red',   'INVALID'],
+    invalid_database:  ['pill-purple','NO DB'],
+    not_uni:           ['pill-cyan',  'UNKNOWN'],
+    on_cooldown:       ['pill-gray',  'COOLDOWN'],
+  };
+  const [c,l] = m[status] || ['pill-gray', (status||'').toUpperCase()];
+  return `<span class="status-pill ${c}">${l}</span>`;
+}
+
+function reasonBadge(category) {
+  const m = {
+    valid_with_bus:    ['var(--green)', 'Fee paid + Bus active — Access granted'],
+    unpaid_fee:        ['var(--amber)', 'Bus active but fee is UNPAID'],
+    valid_without_bus: ['var(--amber)', 'Bus active but fee is UNPAID'],
+    no_bus_policy:     ['var(--red)',   'No bus subscription assigned'],
+    not_in_db:         ['var(--purple)','Photo matched but not in student DB'],
+    not_uni_student:   ['var(--cyan)',  'Face not matched to any enrolled student'],
+    cooldown:          ['var(--txt2)',  'Recently processed — on cooldown'],
+  };
+  const [col, msg] = m[category] || ['var(--txt3)', category || ''];
+  if (!msg) return '';
+  return `<div style="font-size:10px;color:${col};font-family:var(--font-mono);margin-top:4px;">${msg}</div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SERVER STATUS
+══════════════════════════════════════════════════════════════ */
+let _online = false;
+function setOnline(ok) {
+  const dot=document.getElementById('server-dot');
+  const lbl=document.getElementById('server-label');
+  const toast=document.getElementById('conn-toast');
+  if (ok===_online) return; _online=ok;
+  if (ok) {
+    dot.className='status-dot'; lbl.textContent='Server online'; lbl.style.color='var(--green)';
+    toast.classList.remove('show');
+  } else {
+    dot.className='status-dot offline'; lbl.textContent='Server offline'; lbl.style.color='var(--red)';
+    toast.classList.add('show');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GPS PANEL
+══════════════════════════════════════════════════════════════ */
+function renderGpsPanel(loc, panelId, updatedId) {
+  const panel = document.getElementById(panelId);
+  if (!loc || (!loc.gps_lat && !loc.stop_name)) {
+    panel.innerHTML=`<div class="gps-no-data"><svg width="36" height="36" viewBox="0 0 24 24" fill="var(--txt3)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg><span>No GPS data</span></div>`;
+    return;
+  }
+  const q   = loc.image_quality ? (parseFloat(loc.image_quality)*100).toFixed(0) : null;
+  const qW  = q ? Math.min(100,parseFloat(q)) : 0;
+  const qC  = qW>70?'var(--green)':qW>40?'var(--amber)':'var(--red)';
+  function fc(v) { return (v===null||v===undefined)?'—':parseFloat(v).toFixed(5); }
+
+  panel.innerHTML = `<div class="gps-panel">
+    <div class="gps-stop-name">${loc.stop_name||'—'}</div>
+    <div class="gps-coords"><span>LAT ${fc(loc.gps_lat)}</span><span>LON ${fc(loc.gps_lon)}</span></div>
+    <div class="gps-meta-row">
+      <div class="gps-meta-item"><div class="gps-meta-label">Stop Lat</div><div class="gps-meta-val">${fc(loc.stop_lat)}</div></div>
+      <div class="gps-meta-item"><div class="gps-meta-label">Stop Lon</div><div class="gps-meta-val">${fc(loc.stop_lon)}</div></div>
+      <div class="gps-meta-item"><div class="gps-meta-label">City</div><div class="gps-meta-val">${loc.stop_city||'—'}</div></div>
+      <div class="gps-meta-item"><div class="gps-meta-label">State</div><div class="gps-meta-val">${loc.stop_state||'—'}</div></div>
+    </div>
+    ${q?`<div><div class="gps-meta-label" style="margin-bottom:6px;">Image Quality</div>
+    <div class="quality-ring">
+      <div class="quality-num" style="color:${qC}">${q}%</div>
+      <div class="quality-bar-wrap"><div class="quality-bar" style="width:${qW}%;background:${qC}"></div></div>
+    </div></div>`:''}
   </div>`;
-}
 
-function feeBadge(fee) {
-  if (!fee) return "—";
-  const paid = fee.toLowerCase() === "paid";
-  return `<span class="fee-badge ${paid?"fee-paid":"fee-unpaid"}">${paid?"✓":"✗"} ${fee}</span>`;
-}
-
-function imgBox(b64, fallbackIcon, fallbackText) {
-  if (b64)
-    return `<img src="${b64}" style="width:100%;height:100%;min-height:220px;object-fit:cover;display:block;">`;
-  return `<div class="no-feed"><div class="no-feed-icon">${fallbackIcon}</div><span>${fallbackText}</span></div>`;
-}
-
-// ── Update everything ──────────────────────────────────────────────────────
-function applyResult(d) {
-  const s   = d.status || "idle";
-  const cfg = CFG[s] || CFG.idle;
-
-  // Banner
-  DOM.banner.setAttribute("data-s", s);
-  DOM.bIcon.textContent  = cfg.icon;
-  DOM.bTitle.textContent = cfg.title;
-  DOM.bMsg.textContent   = d.message || "";
-  const p = d.confidence !== null && d.confidence !== undefined
-    ? Math.round(d.confidence * 100) + "%" : "—";
-  DOM.bConf.textContent  = p;
-
-  // Last captured frame (top right)
-  DOM.capWrap.innerHTML = imgBox(d.captured_b64, "📷", "No capture yet");
-  DOM.capDot.style.background    = d.captured_b64   ? cfg.dot : "var(--muted)";
-  DOM.cmpCapDot.style.background = d.captured_b64   ? cfg.dot : "var(--muted)";
-
-  // Comparison section
-  DOM.cmpCapBody.innerHTML = imgBox(d.captured_b64,   "📷", "Awaiting scan");
-  DOM.cmpEnrBody.innerHTML = imgBox(d.enrollment_b64, "🎓", s === "invalid_person" ? "No match found" : "No enrollment photo");
-
-  // Match pill
-  DOM.matchPill.textContent = cfg.pillTxt;
-  DOM.matchPill.className   = `match-pill ${cfg.pill}`;
-
-  // Student details
-  if (s === "valid_with_bus" || s === "valid_without_bus") {
-    // Show enrollment photo in avatar circle
-    if (d.enrollment_b64) {
-      DOM.avatar.innerHTML = `<img src="${d.enrollment_b64}" alt="Student Photo">`;
-    } else {
-      DOM.avatar.innerHTML = "👤";
-    }
-    DOM.avatar.className = s === "valid_with_bus" ? "avatar av-green" : "avatar av-yellow";
-    DOM.name.textContent   = d.name || "—";
-    DOM.gr.textContent     = `GR No.: ${d.gr_no || "—"}`;
-    DOM.dept.textContent   = d.department || "—";
-    DOM.year.textContent   = d.year || "—";
-    DOM.route.textContent  = d.route || "—";
-    DOM.fee.innerHTML      = feeBadge(d.fee_status);
-    DOM.score.innerHTML    = confHTML(d.confidence);
-    DOM.time.textContent   = fmtTime(d.timestamp);
-  } else if (s === "invalid_person") {
-    DOM.avatar.innerHTML = "❓";
-    DOM.avatar.className = "avatar av-red";
-    DOM.name.textContent   = "Unknown Person";
-    DOM.gr.textContent     = "GR No.: —";
-    DOM.dept.textContent = DOM.year.textContent = DOM.route.textContent = "—";
-    DOM.fee.innerHTML = "—"; DOM.score.innerHTML = confHTML(d.confidence);
-    DOM.time.textContent = fmtTime(d.timestamp);
-  } else if (s === "invalid_database") {
-    DOM.avatar.innerHTML = "🚫";
-    DOM.avatar.className = "avatar av-red";
-    DOM.name.textContent   = "Not in Database";
-    DOM.gr.textContent     = `GR No.: ${d.gr_no || "—"}`;
-    DOM.dept.textContent = DOM.year.textContent = DOM.route.textContent = "—";
-    DOM.fee.innerHTML = "—"; DOM.score.innerHTML = confHTML(d.confidence);
-    DOM.time.textContent = fmtTime(d.timestamp);
+  if (updatedId && loc.updated_at) {
+    document.getElementById(updatedId).textContent = fmtTs(loc.updated_at);
+    const p=document.getElementById('gps-pulse');
+    if(p) p.style.background='var(--cyan)';
   }
-
-  // Log row
-  appendLog(d, cfg);
-
-  // Stats
-  stats.total++;
-  if (s === "valid_with_bus")    stats.valid++;
-  if (s === "valid_without_bus") stats.nofee++;
-  if (s === "invalid_person" || s === "invalid_database") stats.inv++;
-  DOM.stTotal.textContent = stats.total;
-  DOM.stValid.textContent = stats.valid;
-  DOM.stNofee.textContent = stats.nofee;
-  DOM.stInv.textContent   = stats.inv;
 }
 
-function appendLog(d, cfg) {
-  document.querySelector(".no-data")?.remove();
+/* ══════════════════════════════════════════════════════════════
+   SCAN POLL
+══════════════════════════════════════════════════════════════ */
+let _lastScanTs = null;
 
-  const capThumb = d.captured_b64
-    ? `<img src="${d.captured_b64}" class="thumb" alt="cap">`
-    : `<div class="nothumb">📷</div>`;
-
-  const enrThumb = d.enrollment_b64
-    ? `<img src="${d.enrollment_b64}" class="thumb" alt="enr">`
-    : `<div class="nothumb">🎓</div>`;
-
-  const tr = document.createElement("tr");
-  tr.classList.add("anim");
-  tr.innerHTML = `
-    <td>${capThumb}</td>
-    <td>${enrThumb}</td>
-    <td>${fmtTime(d.timestamp)}</td>
-    <td style="font-family:monospace;font-size:.72rem">${d.gr_no || "—"}</td>
-    <td>${d.name || "—"}</td>
-    <td><span class="sp ${cfg.sp}">${cfg.short}</span></td>
-    <td>${confHTML(d.confidence)}</td>
-  `;
-  DOM.logBody.insertBefore(tr, DOM.logBody.firstChild);
-  while (DOM.logBody.rows.length > 50) DOM.logBody.deleteRow(DOM.logBody.rows.length - 1);
-}
-
-// ── Result freeze logic ────────────────────────────────────────────────────
-// After a VALID or INVALID result, freeze the display for FREEZE_MS
-// so the next unknown/idle result from Pi doesn't overwrite it immediately.
-const FREEZE_MS   = 5000;   // Hold result on screen for 5 seconds
-let   freezeUntil = 0;      // Timestamp until which we ignore new results
-
-function isFrozen() {
-  return Date.now() < freezeUntil;
-}
-
-function freezeResult() {
-  freezeUntil = Date.now() + FREEZE_MS;
-}
-
-// Priority: valid_with_bus > valid_without_bus > invalid_database > invalid_person
-const PRIORITY = {
-  valid_with_bus:    4,
-  valid_without_bus: 3,
-  invalid_database:  2,
-  invalid_person:    1,
-  idle:              0,
-};
-
-function shouldUpdate(newStatus) {
-  // Always update if not frozen
-  if (!isFrozen()) return true;
-  // While frozen: only update if new result has HIGHER priority (better result came in)
-  const current = DOM.banner.getAttribute("data-s") || "idle";
-  return (PRIORITY[newStatus] || 0) > (PRIORITY[current] || 0);
-}
-
-// ── Poll ───────────────────────────────────────────────────────────────────
-async function poll() {
+async function pollScan() {
   try {
-    const res = await fetch("/upload_status", { cache:"no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const d   = await res.json();
-
-    // Show countdown in footer
-    const remaining = Math.max(0, Math.ceil((freezeUntil - Date.now()) / 1000));
-    DOM.lastPoll.textContent = remaining > 0
-      ? `Result held for ${remaining}s more…`
-      : `Updated: ${fmtTime(new Date().toISOString())}`;
-
-    // Skip if same timestamp (already processed)
-    if (!d.timestamp || d.timestamp === lastTs) return;
-    // Skip idle
-    if (d.status === "idle") return;
-    // Skip if frozen and not a better result
-    if (!shouldUpdate(d.status)) return;
-
-    lastTs = d.timestamp;
-    applyResult(d);
-    freezeResult();   // Freeze display after every new result
-
-  } catch(e) {
-    DOM.lastPoll.textContent = `Poll error: ${e.message}`;
-  }
+    const r = await fetch(BASE+'/upload_status');
+    setOnline(r.ok);
+    if (!r.ok) return;
+    const d = await r.json();
+    updateStats(d);
+    renderScan(d);
+    const loc = d.location;
+    if (loc && loc.stop_name) {
+      document.getElementById('feed-stop-label').textContent = loc.stop_name;
+      document.getElementById('feed-stop-ov').textContent    = loc.stop_name;
+    }
+    if (d.timestamp) {
+      document.getElementById('feed-ts').textContent   = fmtTs(d.timestamp);
+      document.getElementById('feed-time').textContent = fmtTs(d.timestamp);
+    }
+    renderGpsPanel(d.location, 'scan-loc-panel', null);
+  } catch { setOnline(false); }
 }
 
-poll();
-setInterval(poll, POLL_MS);
+function updateStats(d) {
+  if (!d || d.is_idle || !d.timestamp) return;
+  if (d.timestamp === _lastStatsTs) return; // already processed this scan
+  _lastStatsTs = d.timestamp;
+
+  const s = d.summary || {};
+  stats.valid    += s.valid_with_bus || 0;
+  stats.unpaid   += s.unpaid || 0;
+  stats.invalid  += s.invalid || 0;
+  stats.notuni   += s.not_uni || 0;
+  stats.cooldown += s.cooldown || 0;
+  document.getElementById('s-valid').textContent    = stats.valid;
+  document.getElementById('s-unpaid').textContent   = stats.unpaid;
+  document.getElementById('s-invalid').textContent  = stats.invalid;
+  document.getElementById('s-notuni').textContent   = stats.notuni;
+  document.getElementById('s-cooldown').textContent = stats.cooldown;
+}
+
+function renderScan(d) {
+  const idle  = document.getElementById('scan-idle');
+  const list  = document.getElementById('scan-list');
+  const cnt   = document.getElementById('scan-cnt');
+  const multi = document.getElementById('scan-multi');
+
+  if (!d||d.is_idle||!d.results||d.results.length===0) {
+    idle.style.display='flex'; list.style.display='none';
+    cnt.textContent='—'; multi.style.display='none'; return;
+  }
+  idle.style.display='none'; list.style.display='flex';
+  cnt.textContent   = d.face_count+' face'+(d.face_count!==1?'s':'');
+  multi.style.display = d.multi_face?'inline-flex':'none';
+
+  list.innerHTML = d.results.map(r => {
+    const capImg = thumbHtml(r.captured_b64||'', r.name||'face');
+    const enrImg = r.enrollment_b64
+      ? `<img class="face-thumb" src="${r.enrollment_b64}" style="opacity:.7;border-color:var(--border)" title="Enrollment photo"/>`
+      : '';
+    const conf  = r.confidence||0;
+    const cPct  = Math.round(conf*100);
+    const cCol  = cPct>=80?'var(--green)':cPct>=60?'var(--amber)':'var(--red)';
+
+    let feeBadge='';
+    if (r.fee_status && r.category!=='not_uni_student' && r.category!=='not_in_db') {
+      const paid = r.fee_status.toLowerCase()==='paid';
+      feeBadge=`<span class="face-tag" style="color:${paid?'var(--green)':'var(--amber)'}">${paid?'Fee: Paid':'Fee: '+r.fee_status}</span>`;
+    }
+    let busBadge='';
+    const pid = r.pickup_id;
+    if (pid && pid!=='' && pid!=='0' && pid!=='None' && pid!=='null') {
+      busBadge=`<span class="face-tag" style="color:var(--cyan2)">Bus #${pid}</span>`;
+    } else if (r.category==='no_bus_policy') {
+      busBadge=`<span class="face-tag" style="color:var(--red);background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.3)">No bus sub</span>`;
+    }
+
+    return `<div class="face-result-card status-${r.status}">
+      ${capImg}${enrImg}
+      <div class="face-info">
+        <div class="face-name">${r.name||'Unknown Person'}</div>
+        <div class="face-gr">${r.gr_no?'GR: '+r.gr_no:'No GR'}${r.enrollment_no?' | ENR: '+r.enrollment_no:''}</div>
+        <div class="face-meta">
+          ${r.department?`<span class="face-tag">${r.department}</span>`:''}
+          ${r.semester?`<span class="face-tag">Sem ${r.semester}</span>`:''}
+          ${r.shift?`<span class="face-tag">${r.shift}</span>`:''}
+          ${feeBadge}${busBadge}
+        </div>
+        ${reasonBadge(r.category)}
+        <div class="conf-bar-wrap" style="margin-top:6px">
+          <div class="conf-bar" style="width:${cPct}%;background:${cCol}"></div>
+        </div>
+        <div style="font-size:10px;color:var(--txt3);font-family:var(--font-mono);margin-top:2px">${cPct}% match</div>
+      </div>
+      <div class="face-status">${pillHtml(r.status,r.category)}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GPS POLL
+══════════════════════════════════════════════════════════════ */
+async function pollGPS() {
+  try {
+    const r=await fetch(BASE+'/bus_location');
+    if (!r.ok) return;
+    renderGpsPanel(await r.json(), 'gps-panel', 'gps-updated');
+  } catch {}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROUTE E — VALID STUDENTS
+══════════════════════════════════════════════════════════════ */
+async function pollValid() {
+  try {
+    const r=await fetch(BASE+'/valid_students?limit=50');
+    if (!r.ok) return;
+    const d=await r.json();
+    const list=document.getElementById('valid-list');
+    const items=d.students||[];
+    document.getElementById('valid-count').textContent=items.length;
+    if (!items.length) {
+      list.innerHTML=`<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg><span>No granted access yet</span></div>`;
+      return;
+    }
+    list.innerHTML=`<div class="student-list">${items.map(s=>{
+      const loc=s.location||{};
+      return `<div class="stu-item">
+        ${avatarHtml(s.captured_b64,s.student_name)}
+        <div class="stu-body">
+          <div class="stu-name">${s.student_name||'—'}</div>
+          <div class="stu-sub">GR: ${s.gr_no||'—'} | ${s.department||'—'} | Sem ${s.semester||'—'}</div>
+        </div>
+        <div class="stu-right">
+          <div class="stu-ts">${fmtTs(s.timestamp)}</div>
+          <div class="stu-stop">${loc.stop_name||'—'}</div>
+          <span class="status-pill pill-green">GRANTED</span>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  } catch {}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROUTE D — UNPAID STUDENTS
+══════════════════════════════════════════════════════════════ */
+async function pollUnpaid() {
+  try {
+    const r=await fetch(BASE+'/unpaid_students');
+    if (!r.ok) return;
+    const d=await r.json();
+    const list=document.getElementById('unpaid-list');
+    const items=d.unpaid_students||[];
+    document.getElementById('unpaid-count').textContent=items.length;
+    if (!items.length) {
+      list.innerHTML=`<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg><span>No unpaid students</span></div>`;
+      return;
+    }
+    list.innerHTML=`<div class="student-list">${items.map(s=>{
+      const loc=s.location||{};
+      return `<div class="stu-item">
+        ${avatarHtml(s.captured_b64,s.student_name)}
+        <div class="stu-body">
+          <div class="stu-name">${s.student_name||'—'}</div>
+          <div class="stu-sub">GR: ${s.gr_no||'—'} | ${s.department||'—'}</div>
+        </div>
+        <div class="stu-right">
+          <div class="stu-ts">${fmtTs(s.timestamp)}</div>
+          <div class="stu-stop">${loc.stop_name||'—'}</div>
+          <span class="status-pill pill-amber">UNPAID</span>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  } catch {}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROUTE B+C — INVALID ALERTS
+══════════════════════════════════════════════════════════════ */
+async function pollInvalid() {
+  try {
+    const r=await fetch(BASE+'/invalid_alerts?limit=50');
+    if (!r.ok) return;
+    const d=await r.json();
+    const list=document.getElementById('invalid-list');
+    const items=d.alerts||[];
+    document.getElementById('invalid-count').textContent=items.length;
+    if (!items.length) {
+      list.innerHTML=`<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><span>No invalid alerts</span></div>`;
+      return;
+    }
+    const rcls={not_in_db:'rt-nodb',no_bus_policy:'rt-nobus'};
+    const rlbl={not_in_db:'NOT IN DB',no_bus_policy:'NO BUS'};
+    list.innerHTML=`<div class="student-list">${items.map(s=>{
+      const loc=s.location||{};
+      const rc=rcls[s.reason]||'rt-unknown';
+      const rl=rlbl[s.reason]||(s.reason||'ALERT').toUpperCase();
+      return `<div class="stu-item">
+        ${avatarHtml(s.captured_b64,s.student_name)}
+        <div class="stu-body">
+          <div class="stu-name">${s.student_name||s.gr_no||'Unknown'}</div>
+          <div class="stu-sub">${s.gr_no?'GR: '+s.gr_no:'No GR'}${s.department?' | '+s.department:''}</div>
+        </div>
+        <div class="stu-right">
+          <div class="stu-ts">${fmtTs(s.timestamp)}</div>
+          <div class="stu-stop">${loc.stop_name||'—'}</div>
+          <span class="reason-tag ${rc}">${rl}</span>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  } catch {}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ROUTE A — UNKNOWN PERSONS
+══════════════════════════════════════════════════════════════ */
+async function pollNotUni() {
+  try {
+    const r=await fetch(BASE+'/not_uni_student?limit=50');
+    if (!r.ok) return;
+    const d=await r.json();
+    const list=document.getElementById('notuni-list');
+    const items=d.not_uni_students||[];
+    document.getElementById('notuni-count').textContent=items.length;
+    if (!items.length) {
+      list.innerHTML=`<div class="empty-state"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg><span>No unknown persons</span></div>`;
+      return;
+    }
+    list.innerHTML=`<div class="student-list">${items.map(s=>{
+      const loc=s.location||{};
+      const cPct=s.confidence?Math.round(s.confidence*100):0;
+      return `<div class="stu-item">
+        ${avatarHtml(s.captured_b64,'?')}
+        <div class="stu-body">
+          <div class="stu-name">Unknown Person</div>
+          <div class="stu-sub">Best match: ${s.candidate_gr||'none'} (${cPct}%)</div>
+        </div>
+        <div class="stu-right">
+          <div class="stu-ts">${fmtTs(s.timestamp)}</div>
+          <div class="stu-stop">${loc.stop_name||'—'}</div>
+          <span class="status-pill pill-cyan">NOT UNI</span>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  } catch {}
+}
+
+/* ══════════════════════════════════════════════════════════════
+   START POLLING
+══════════════════════════════════════════════════════════════ */
+pollScan();  pollGPS();  pollValid();  pollUnpaid();  pollInvalid();  pollNotUni();
+
+setInterval(pollScan,   2000);
+setInterval(pollGPS,    3000);
+setInterval(pollValid,  4000);
+setInterval(pollUnpaid, 5000);
+setInterval(pollInvalid,5000);
+setInterval(pollNotUni, 5000);
 </script>
 </body>
 </html>
