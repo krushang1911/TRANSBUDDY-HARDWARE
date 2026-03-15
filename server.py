@@ -203,12 +203,20 @@ def _get_slot():
 
 def _parse_location(src):
     def _f(k):
-        v = src.get(k) or ""
-        return str(v).strip() or None
+        v = src.get(k)
+        if v is None:
+            return None
+        s = str(v).strip()
+        return s or None
     def _ff(k):
+        v = src.get(k)
+        if v is None:
+            return None
+        s = str(v).strip()
+        if not s:
+            return None
         try:
-            v = str(src.get(k) or "").strip()
-            return float(v) if v else None
+            return float(s)
         except:
             return None
     return {
@@ -863,7 +871,32 @@ def bus_location():
     if request.method == "OPTIONS":
         return jsonify({}), 200
     with _bus_loc_lock:
-        return jsonify(copy.deepcopy(_bus_location))
+        loc = copy.deepcopy(_bus_location)
+
+    # Normalize output and ensure coordinates are float or null
+    def _num(v):
+        if v is None:
+            return None
+        try:
+            return float(v)
+        except:
+            return None
+
+    out = {
+        "gps_lat": _num(loc.get("gps_lat")),
+        "gps_lon": _num(loc.get("gps_lon")),
+        "stop_name": loc.get("stop_name") or None,
+        "stop_lat": _num(loc.get("stop_lat")),
+        "stop_lon": _num(loc.get("stop_lon")),
+        "stop_city": loc.get("stop_city") or None,
+        "stop_state": loc.get("stop_state") or None,
+        "stop_country": loc.get("stop_country") or None,
+        "stop_display": loc.get("stop_display") or None,
+        "image_quality": _num(loc.get("image_quality")),
+        "updated_at": loc.get("updated_at") or None,
+    }
+
+    return jsonify(out)
 
 
 @app.route("/upload", methods=["POST", "OPTIONS"])
