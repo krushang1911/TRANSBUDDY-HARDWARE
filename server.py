@@ -88,7 +88,7 @@ class Config:
     STUDENT_CACHE_TTL = 300
 
     INSIGHT_CTX = -1
-    DET_SIZE    = (640, 640)
+    DET_SIZE    = (320, 320)  # was (640,640) — 2x faster detection, fine for close-range faces
 
     RESULT_HOLD_SECS  = 8
     VALID_STORE_MAX   = 500
@@ -101,9 +101,14 @@ class Config:
     CAPTURE_JPEG_Q = 88
     ENROLL_JPEG_Q  = 80
 
+    # ── Proof image storage (server-side permanent record) ─────
+    PROOF_DIR          = "proof_images"  # root folder on server disk
+    PROOF_RETAIN_DAYS  = 30              # auto-delete folders older than 30 days
+
 
 for _d in [Config.DIR_WITH_BUS, Config.DIR_WITHOUT_BUS,
-           Config.DIR_INVALID, Config.DIR_PHOTOS, Config.DIR_NOT_UNI]:
+           Config.DIR_INVALID, Config.DIR_PHOTOS, Config.DIR_NOT_UNI,
+           Config.PROOF_DIR]:
     Path(_d).mkdir(parents=True, exist_ok=True)
 
 
@@ -203,20 +208,12 @@ def _get_slot():
 
 def _parse_location(src):
     def _f(k):
-        v = src.get(k)
-        if v is None:
-            return None
-        s = str(v).strip()
-        return s or None
+        v = src.get(k) or ""
+        return str(v).strip() or None
     def _ff(k):
-        v = src.get(k)
-        if v is None:
-            return None
-        s = str(v).strip()
-        if not s:
-            return None
         try:
-            return float(s)
+            v = str(src.get(k) or "").strip()
+            return float(v) if v else None
         except:
             return None
     return {
@@ -481,6 +478,74 @@ def _save(bgr, folder, label):
 
 
 # =============================================================================
+# PROOF IMAGE — permanent disk storage on server
+# =============================================================================
+def _save_proof_to_disk(bgr, route: str, gr_no, stop_name) -> str:
+    """
+    Save one proof JPEG to dated folder on server disk.
+    Returns relative path string, or None on failure.
+
+    Structure:
+      proof_images/
+        YYYY-MM-DD/
+          valid_with_bus/
+            GR_stopname_HHMMSS_ffffff.jpg
+          unpaid_students/
+          invalid_alerts/
+          not_uni_student/
+    """
+    if bgr is None:
+        return None
+    try:
+        today  = datetime.now().strftime("%Y-%m-%d")
+        ts     = datetime.now().strftime("%H%M%S_%f")
+        safe_gr   = str(gr_no or "unknown").replace("/", "-")[:20]
+        safe_stop = str(stop_name or "unknown").replace(" ", "_").replace("/", "-")[:30]
+        folder = Path(Config.PROOF_DIR) / today / route
+        folder.mkdir(parents=True, exist_ok=True)
+        fname  = f"{safe_gr}_{safe_stop}_{ts}.jpg"
+        fpath  = folder / fname
+        cv2.imwrite(str(fpath), bgr,
+                    [cv2.IMWRITE_JPEG_QUALITY, Config.CAPTURE_JPEG_Q])
+        logger.info(f"Proof saved: {fpath}")
+        return str(fpath)
+    except Exception as e:
+        logger.error(f"Proof save failed: {e}")
+        return None
+
+
+def _cleanup_old_proofs():
+    """
+    Background thread — runs every hour.
+    Deletes dated proof folders older than PROOF_RETAIN_DAYS.
+    """
+    import shutil
+
+    def _run():
+        while True:
+            try:
+                cutoff = datetime.now() - timedelta(days=Config.PROOF_RETAIN_DAYS)
+                base   = Path(Config.PROOF_DIR)
+                if base.exists():
+                    for day_dir in sorted(base.iterdir()):
+                        if not day_dir.is_dir():
+                            continue
+                        try:
+                            day_date = datetime.strptime(day_dir.name, "%Y-%m-%d")
+                            if day_date < cutoff:
+                                shutil.rmtree(str(day_dir))
+                                logger.info(f"Proof cleanup | deleted old folder: {day_dir.name}")
+                        except ValueError:
+                            pass  # skip non-date-named dirs
+            except Exception as e:
+                logger.error(f"Proof cleanup error: {e}")
+            time.sleep(3600)  # check once per hour
+
+    threading.Thread(target=_run, daemon=True, name="proof-cleanup").start()
+    logger.info(f"Proof cleanup started | retain={Config.PROOF_RETAIN_DAYS} days")
+
+
+# =============================================================================
 # ENROLLMENT IMAGE
 # =============================================================================
 def _enroll_b64(gr):
@@ -573,7 +638,7 @@ def _throttle_ok(key: str) -> bool:
 # =============================================================================
 # STORE FUNCTIONS — one per route, never overlap
 # =============================================================================
-def _store_not_uni(crop_b64, conf, candidate_gr, msg, location=None):
+def _store_not_uni(crop_b64, conf, candidate_gr, msg, location=None, frame_bgr=None):
     """Route A"""
     rec = {
         "route": "not_uni_student", "event": "unknown_person",
@@ -582,6 +647,8 @@ def _store_not_uni(crop_b64, conf, candidate_gr, msg, location=None):
         "candidate_gr": candidate_gr, "message": msg,
         "captured_b64": crop_b64, "enrollment_b64": None,
         "location": location or {},
+        "proof_file": _save_proof_to_disk(frame_bgr, "not_uni_student",
+                          candidate_gr, location.get("stop_name") if location else None),
     }
     with nu_lock:
         not_uni_store.insert(0, rec)
@@ -590,7 +657,7 @@ def _store_not_uni(crop_b64, conf, candidate_gr, msg, location=None):
     logger.warning(f"[A] not_uni | conf={conf:.3f} stop={location and location.get('stop_name')}")
 
 
-def _store_invalid(reason, crop_b64, conf, gr, msg, stu=None, location=None):
+def _store_invalid(reason, crop_b64, conf, gr, msg, stu=None, location=None, frame_bgr=None):
     """Routes B+C"""
     enr = _enroll_b64(str(gr) if gr else "")
     rec = {
@@ -607,6 +674,8 @@ def _store_invalid(reason, crop_b64, conf, gr, msg, stu=None, location=None):
         "pickup_id": str(stu.get("pickup_id", "")) if stu else None,
         "message": msg, "captured_b64": crop_b64,
         "enrollment_b64": enr, "location": location or {},
+        "proof_file": _save_proof_to_disk(frame_bgr, "invalid_alerts",
+                          gr, location.get("stop_name") if location else None),
     }
     with inv_lock:
         invalid_store.insert(0, rec)
@@ -615,7 +684,7 @@ def _store_invalid(reason, crop_b64, conf, gr, msg, stu=None, location=None):
     logger.warning(f"[B/C] invalid | reason={reason} gr={gr} stop={location and location.get('stop_name')}")
 
 
-def _store_unpaid(stu, crop_b64, location=None):
+def _store_unpaid(stu, crop_b64, location=None, frame_bgr=None):
     """Route D"""
     gr = str(stu.get("gr_no", ""))
     rec = {
@@ -631,6 +700,8 @@ def _store_unpaid(stu, crop_b64, location=None):
         "pickup_id": str(stu.get("pickup_id", "")),
         "captured_b64": crop_b64, "enrollment_b64": _enroll_b64(gr),
         "location": location or {},
+        "proof_file": _save_proof_to_disk(frame_bgr, "unpaid_students",
+                          gr, location.get("stop_name") if location else None),
     }
     with unpaid_lock:
         unpaid_store[gr] = rec
@@ -639,7 +710,7 @@ def _store_unpaid(stu, crop_b64, location=None):
     logger.warning(f"[D] unpaid | gr={gr} stop={location and location.get('stop_name')}")
 
 
-def _store_valid(stu, crop_b64, location=None):
+def _store_valid(stu, crop_b64, location=None, frame_bgr=None):
     """Route E"""
     gr = str(stu.get("gr_no", ""))
     rec = {
@@ -655,6 +726,8 @@ def _store_valid(stu, crop_b64, location=None):
         "pickup_id": str(stu.get("pickup_id", "")),
         "captured_b64": crop_b64, "enrollment_b64": _enroll_b64(gr),
         "location": location or {},
+        "proof_file": _save_proof_to_disk(frame_bgr, "valid_with_bus",
+                          gr, location.get("stop_name") if location else None),
     }
     with valid_lock:
         valid_store.insert(0, rec)
@@ -681,7 +754,13 @@ def _push_scan(new_scan):
 # =============================================================================
 # DECISION TREE — ONE FACE
 # =============================================================================
-def process_one_face(emb, crop_b64, frame, location) -> dict:
+def process_one_face(emb, crop_b64, frame, location, skip_grs: set = None) -> dict:
+    """
+    Decision tree for one face.
+    skip_grs: set of GR numbers already validated this shift — these are
+              returned as on_cooldown immediately without DB lookup or storing,
+              saving processing time at every stop after first detection.
+    """
     ts = datetime.now().isoformat()
     candidate_gr, matched_gr, best, second = match_face(emb)
     margin = best - second
@@ -701,7 +780,7 @@ def process_one_face(emb, crop_b64, frame, location) -> dict:
         }
         if _throttle_ok(key):
             _save(frame, Config.DIR_NOT_UNI, "not_uni")
-            _store_not_uni(crop_b64, best, candidate_gr, result["message"], location)
+            _store_not_uni(crop_b64, best, candidate_gr, result["message"], location, frame_bgr=frame)
         return result
 
     # ── Cooldown ───────────────────────────────────────────────
@@ -714,6 +793,21 @@ def process_one_face(emb, crop_b64, frame, location) -> dict:
             "cooldown_secs": _cd_left(matched_gr),
             "confidence": round(float(best), 4), "margin": round(float(margin), 4),
             "message": f"GR {matched_gr} on cooldown — next slot in {_cd_left(matched_gr)//3600}h",
+            "timestamp": ts, "captured_b64": crop_b64,
+            "enrollment_b64": _enroll_b64(matched_gr), "location": location,
+        }
+
+    # ── Pi-side shift skip (already validated this shift) ────────
+    if skip_grs and matched_gr in skip_grs:
+        logger.info(f"Skip | gr={matched_gr} already validated this shift (Pi list)")
+        return {
+            "status": "on_cooldown", "route": "cooldown", "category": "shift_skip",
+            "gr_no": matched_gr, "enrollment_no": None, "name": None,
+            "department": None, "semester": None, "shift": None,
+            "fee_status": None, "pickup_id": None, "on_cooldown": True,
+            "cooldown_secs": _cd_left(matched_gr),
+            "confidence": round(float(best), 4), "margin": round(float(margin), 4),
+            "message": f"GR {matched_gr} already validated this shift — skipped",
             "timestamp": ts, "captured_b64": crop_b64,
             "enrollment_b64": _enroll_b64(matched_gr), "location": location,
         }
@@ -738,7 +832,7 @@ def process_one_face(emb, crop_b64, frame, location) -> dict:
             _nodb_reported[matched_gr] = time.time()
         if first:
             _save(frame, Config.DIR_INVALID, f"nodb_{matched_gr}")
-            _store_invalid("not_in_db", crop_b64, best, matched_gr, msg, location=location)
+            _store_invalid("not_in_db", crop_b64, best, matched_gr, msg, location=location, frame_bgr=frame)
         _set_cd(matched_gr)
         return result
 
@@ -757,7 +851,7 @@ def process_one_face(emb, crop_b64, frame, location) -> dict:
             "enrollment_b64": enr_b64, "location": location,
         }
         _save(frame, Config.DIR_INVALID, f"nobus_{matched_gr}")
-        _store_invalid("no_bus_policy", crop_b64, best, matched_gr, msg, stu=stu, location=location)
+        _store_invalid("no_bus_policy", crop_b64, best, matched_gr, msg, stu=stu, location=location, frame_bgr=frame)
         _set_cd(matched_gr)
         return result
 
@@ -775,7 +869,7 @@ def process_one_face(emb, crop_b64, frame, location) -> dict:
             "enrollment_b64": enr_b64, "location": location,
         }
         _save(frame, Config.DIR_WITHOUT_BUS, matched_gr)
-        _store_unpaid(stu, crop_b64, location=location)
+        _store_unpaid(stu, crop_b64, location=location, frame_bgr=frame)
         _set_cd(matched_gr)
         return result
 
@@ -792,7 +886,7 @@ def process_one_face(emb, crop_b64, frame, location) -> dict:
         "enrollment_b64": enr_b64, "location": location,
     }
     _save(frame, Config.DIR_WITH_BUS, matched_gr)
-    _store_valid(stu, crop_b64, location=location)
+    _store_valid(stu, crop_b64, location=location, frame_bgr=frame)
     _set_cd(matched_gr)
     return result
 
@@ -871,32 +965,7 @@ def bus_location():
     if request.method == "OPTIONS":
         return jsonify({}), 200
     with _bus_loc_lock:
-        loc = copy.deepcopy(_bus_location)
-
-    # Normalize output and ensure coordinates are float or null
-    def _num(v):
-        if v is None:
-            return None
-        try:
-            return float(v)
-        except:
-            return None
-
-    out = {
-        "gps_lat": _num(loc.get("gps_lat")),
-        "gps_lon": _num(loc.get("gps_lon")),
-        "stop_name": loc.get("stop_name") or None,
-        "stop_lat": _num(loc.get("stop_lat")),
-        "stop_lon": _num(loc.get("stop_lon")),
-        "stop_city": loc.get("stop_city") or None,
-        "stop_state": loc.get("stop_state") or None,
-        "stop_country": loc.get("stop_country") or None,
-        "stop_display": loc.get("stop_display") or None,
-        "image_quality": _num(loc.get("image_quality")),
-        "updated_at": loc.get("updated_at") or None,
-    }
-
-    return jsonify(out)
+        return jsonify(copy.deepcopy(_bus_location))
 
 
 @app.route("/upload", methods=["POST", "OPTIONS"])
@@ -911,6 +980,11 @@ def upload():
     try:
         location = _parse_location(request.form)
         _update_bus_location(location)
+        # GRs already validated this shift (Pi-side tracking)
+        skip_raw  = request.form.get("skip_gr_list", "")
+        skip_grs  = set(g.strip() for g in skip_raw.split(",") if g.strip())
+        if skip_grs:
+            logger.info(f"Pi skip list: {len(skip_grs)} GRs already validated this shift")
         logger.info(f"Upload | stop='{location.get('stop_name', '?')}' "
                     f"gps=({location.get('gps_lat')},{location.get('gps_lon')})")
 
@@ -941,7 +1015,8 @@ def upload():
 
         results = []
         for idx, fi in enumerate(detected):
-            r = process_one_face(fi["embedding"], fi["crop_b64"], frame, location)
+            r = process_one_face(fi["embedding"], fi["crop_b64"], frame, location,
+                                skip_grs=skip_grs)
             r["face_index"] = idx
             r["bbox"] = fi["bbox"]
             results.append(r)
@@ -1125,6 +1200,28 @@ def clear_cache():
     return jsonify({"status": "all_cleared", "removed": n})
 
 
+@app.route("/validated_today", methods=["GET", "OPTIONS"])
+def validated_today():
+    """
+    Returns GR numbers already validated in current time slot today.
+    Pi uses this to skip re-uploading students already processed this shift.
+    Slot = morning (before 14:00) | evening (14:00+).
+    """
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+    today = _today()
+    slot  = _get_slot()
+    with cd_lock:
+        validated = [
+            gr for gr, rec in student_cooldown.items()
+            if rec.get(slot) == today
+        ]
+    return jsonify({
+        "today": today, "slot": slot,
+        "count": len(validated), "gr_list": validated,
+    })
+
+
 @app.route("/health", methods=["GET", "OPTIONS"])
 def health():
     if request.method == "OPTIONS":
@@ -1238,6 +1335,7 @@ def startup():
     face_app = _init_model()
     precompute_embeddings()
     threading.Thread(target=_save_worker, daemon=True, name="save").start()
+    _cleanup_old_proofs()
     logger.info("  http://0.0.0.0:5000")
     logger.info("  http://localhost:5000/debug")
     logger.info("=" * 64)
