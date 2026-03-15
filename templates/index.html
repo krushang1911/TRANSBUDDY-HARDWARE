@@ -525,7 +525,10 @@ function setOnline(ok) {
 ══════════════════════════════════════════════════════════════ */
 function renderGpsPanel(loc, panelId, updatedId) {
   const panel = document.getElementById(panelId);
-  if (!loc || (!loc.gps_lat && !loc.stop_name)) {
+  const hasCoords = loc && (loc.gps_lat !== null && loc.gps_lat !== undefined) &&
+                    (loc.gps_lon !== null && loc.gps_lon !== undefined);
+  const hasStop = loc && loc.stop_name;
+  if (!loc || (!hasCoords && !hasStop)) {
     panel.innerHTML=`<div class="gps-no-data"><svg width="36" height="36" viewBox="0 0 24 24" fill="var(--txt3)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg><span>No GPS data</span></div>`;
     return;
   }
