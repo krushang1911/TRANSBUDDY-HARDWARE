@@ -189,6 +189,25 @@ _stu_cache      = {};  _stu_cache_lock = threading.Lock()
 _upload_sem     = threading.Semaphore(1)
 _save_q         = queue.Queue(maxsize=100)
 
+# ── SSE (Server-Sent Events) — push to dashboard ──────────────
+# Each connected browser gets its own queue (max 10 connections)
+_sse_clients      = []
+_sse_clients_lock = threading.Lock()
+
+
+def _sse_broadcast(event: str, data: str):
+    """Push one SSE event to all connected dashboard clients."""
+    msg = "event: " + str(event) + "\ndata: " + str(data) + "\n\n"
+    with _sse_clients_lock:
+        dead = []
+        for q in _sse_clients:
+            try:
+                q.put_nowait(msg)
+            except queue.Full:
+                dead.append(q)
+        for q in dead:
+            _sse_clients.remove(q)
+
 
 # =============================================================================
 # HELPERS
@@ -655,6 +674,7 @@ def _store_not_uni(crop_b64, conf, candidate_gr, msg, location=None, frame_bgr=N
         if len(not_uni_store) > Config.NOT_UNI_STORE_MAX:
             not_uni_store.pop()
     logger.warning(f"[A] not_uni | conf={conf:.3f} stop={location and location.get('stop_name')}")
+    _sse_broadcast("not_uni", "1")
 
 
 def _store_invalid(reason, crop_b64, conf, gr, msg, stu=None, location=None, frame_bgr=None):
@@ -682,6 +702,7 @@ def _store_invalid(reason, crop_b64, conf, gr, msg, stu=None, location=None, fra
         if len(invalid_store) > Config.INVALID_STORE_MAX:
             invalid_store.pop()
     logger.warning(f"[B/C] invalid | reason={reason} gr={gr} stop={location and location.get('stop_name')}")
+    _sse_broadcast("invalid", reason)
 
 
 def _store_unpaid(stu, crop_b64, location=None, frame_bgr=None):
@@ -708,6 +729,7 @@ def _store_unpaid(stu, crop_b64, location=None, frame_bgr=None):
         if len(unpaid_store) > Config.UNPAID_STORE_MAX:
             del unpaid_store[next(iter(unpaid_store))]
     logger.warning(f"[D] unpaid | gr={gr} stop={location and location.get('stop_name')}")
+    _sse_broadcast("unpaid", gr)
 
 
 def _store_valid(stu, crop_b64, location=None, frame_bgr=None):
@@ -734,6 +756,7 @@ def _store_valid(stu, crop_b64, location=None, frame_bgr=None):
         if len(valid_store) > Config.VALID_STORE_MAX:
             valid_store.pop()
     logger.info(f"[E] GRANTED | gr={gr} name={stu.get('student_name')} stop={location and location.get('stop_name')}")
+    _sse_broadcast("valid", gr)
 
 
 # =============================================================================
@@ -1037,6 +1060,14 @@ def upload():
             "timestamp": datetime.now().isoformat(), "captured_b64": frame_b64,
         }
         _push_scan(scan)
+        # Push lightweight SSE event so dashboard fetches immediately
+        import json as _json
+        _sse_broadcast("scan", _json.dumps({
+            "face_count": n,
+            "summary":    summary,
+            "timestamp":  scan["timestamp"],
+            "stop_name":  location.get("stop_name") or "",
+        }))
         logger.info(f"Done | faces={n} granted={summary['valid_with_bus']} "
                     f"unpaid={summary['unpaid']} invalid={summary['invalid']} "
                     f"not_uni={summary['not_uni']} | {_ms(t0)}")
@@ -1220,6 +1251,54 @@ def validated_today():
         "today": today, "slot": slot,
         "count": len(validated), "gr_list": validated,
     })
+
+
+@app.route("/events")
+def sse_stream():
+    """
+    Server-Sent Events endpoint.
+    Dashboard subscribes once — server pushes events when data changes.
+    Replaces constant polling for scan/valid/unpaid/invalid/not_uni.
+    GPS (/bus_location) still polled every 3s for live tracking.
+    """
+    def _gen():
+        q = queue.Queue(maxsize=50)
+        with _sse_clients_lock:
+            _sse_clients.append(q)
+        logger.info(f"SSE | client connected (total={len(_sse_clients)})")
+        try:
+            # Send heartbeat immediately on connect
+            yield "event: connected\ndata: ok\n\n"
+
+
+
+            while True:
+                try:
+                    msg = q.get(timeout=25)
+                    yield msg
+                except queue.Empty:
+                    # Heartbeat every 25s to keep connection alive
+                    yield "event: heartbeat\ndata: ping\n\n"
+
+
+
+        except GeneratorExit:
+            pass
+        finally:
+            with _sse_clients_lock:
+                if q in _sse_clients:
+                    _sse_clients.remove(q)
+            logger.info(f"SSE | client disconnected (total={len(_sse_clients)})")
+
+    return Response(
+        _gen(),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control":   "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection":      "keep-alive",
+        }
+    )
 
 
 @app.route("/health", methods=["GET", "OPTIONS"])
