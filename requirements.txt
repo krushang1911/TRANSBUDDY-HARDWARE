@@ -1,0 +1,9 @@
+numpy
+opencv-python-headless
+mysql-connector-python
+Flask
+Flask-SocketIO
+insightface
+requests
+python-socketio[client]
+urllib3
