@@ -74,11 +74,12 @@ class Config:
     DIR_INVALID     = "captures/invalid_captures"
     DIR_NOT_UNI     = "captures/not_uni_student"
 
-    DB_HOST      = "127.0.0.1"
-    DB_PORT      = 3306
-    DB_USER      = "root"
-    DB_PASSWORD  = ""
-    DB_NAME      = "transbuddy_db_1"
+    DB_HOST      = "transbuddy-db-1-transbuddy.e.aivencloud.com"
+    DB_PORT      = 20742
+    DB_USER      = "avnadmin"
+    DB_PASSWORD  = "AVNS_IxUzga3f6XjSmzEv6Ej"
+    DB_NAME      = "defaultdb"
+    DB_SSL_CA    = Path(__file__).resolve().with_name("ca.pem")
     DB_POOL_SIZE = 5
 
     # "fee"       = all DB students are bus users (use this if pickup_id not set)
@@ -257,16 +258,31 @@ def _update_bus_location(loc):
 _db_pool = None
 
 
+def _db_connect_kwargs():
+    kwargs = {
+        "host": Config.DB_HOST,
+        "port": Config.DB_PORT,
+        "user": Config.DB_USER,
+        "password": Config.DB_PASSWORD,
+        "database": Config.DB_NAME,
+        "connect_timeout": 5,
+        "autocommit": True,
+    }
+    if Config.DB_SSL_CA.is_file():
+        kwargs["ssl_ca"] = str(Config.DB_SSL_CA)
+    else:
+        logger.warning(f"DB SSL CA not found: {Config.DB_SSL_CA}")
+    return kwargs
+
+
 def _init_db_pool():
     global _db_pool
     try:
         _db_pool = MySQLConnectionPool(
             pool_name="transbuddy", pool_size=Config.DB_POOL_SIZE,
-            host=Config.DB_HOST, port=Config.DB_PORT,
-            user=Config.DB_USER, password=Config.DB_PASSWORD,
-            database=Config.DB_NAME, connect_timeout=5, autocommit=True,
+            **_db_connect_kwargs(),
         )
-        logger.info(f"DB pool ready | {Config.DB_HOST}/{Config.DB_NAME}")
+        logger.info(f"DB pool ready | {Config.DB_HOST}/{Config.DB_NAME} | tls=on")
         return True
     except Exception as e:
         logger.error(f"DB pool failed: {e}")
@@ -279,11 +295,7 @@ def _get_db():
             return _db_pool.get_connection()
         except:
             pass
-    return mysql.connector.connect(
-        host=Config.DB_HOST, port=Config.DB_PORT, user=Config.DB_USER,
-        password=Config.DB_PASSWORD, database=Config.DB_NAME,
-        connect_timeout=5, autocommit=True,
-    )
+    return mysql.connector.connect(**_db_connect_kwargs())
 
 
 def test_db():
