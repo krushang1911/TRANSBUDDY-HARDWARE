@@ -1,7 +1,10 @@
-flask
-gunicorn
-numpy
-opencv-python-headless
-mysql-connector-python
-insightface
-onnxruntime
+flask>=2.3.0
+gunicorn>=21.0.0
+numpy>=1.24.0
+opencv-python-headless>=4.8.0
+mysql-connector-python>=8.0.33
+insightface>=0.7.3
+onnxruntime>=1.15.0
+huggingface-hub>=0.17.0
+Pillow>=10.0.0
+requests>=2.31.0

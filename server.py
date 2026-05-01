@@ -44,6 +44,8 @@ import mysql.connector
 from mysql.connector.pooling import MySQLConnectionPool
 from flask import Flask, request, jsonify, send_from_directory, Response
 from insightface.app import FaceAnalysis
+from huggingface_hub import snapshot_download
+from PIL import Image
 
 
 # ── LOGGING ───────────────────────────────────────────────────
@@ -68,6 +70,12 @@ class Config:
     CONFIDENCE_THRESHOLD = 0.45
     MARGIN_THRESHOLD     = 0.03
 
+    # Hugging Face dataset for student photos
+    # Format: "username/dataset-name"
+    # Set to None to use local photos folder
+    HF_DATASET_REPO  = "Shivam2307/face-database"  # e.g., "your-username/transbuddy-student-photos"
+    HF_CACHE_DIR     = "hf_datasets"  # Directory to cache downloaded dataset
+    
     DIR_PHOTOS      = "photos"
     DIR_WITH_BUS    = "captures/with_bus"
     DIR_WITHOUT_BUS = "captures/without_bus"
@@ -109,7 +117,7 @@ class Config:
 
 for _d in [Config.DIR_WITH_BUS, Config.DIR_WITHOUT_BUS,
            Config.DIR_INVALID, Config.DIR_PHOTOS, Config.DIR_NOT_UNI,
-           Config.PROOF_DIR]:
+           Config.PROOF_DIR, Config.HF_CACHE_DIR]:
     Path(_d).mkdir(parents=True, exist_ok=True)
 
 
@@ -354,73 +362,179 @@ def invalidate_student(gr_no):
 # MODEL
 # =============================================================================
 def _init_model():
+    """Load InsightFace model with retry logic for race conditions"""
     logger.info("Loading InsightFace buffalo_l...")
-    fa = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
-    fa.prepare(ctx_id=Config.INSIGHT_CTX, det_size=Config.DET_SIZE)
-    logger.info("Model loaded OK")
-    return fa
+    
+    # Pre-create model directory to avoid race conditions
+    model_dir = Path.home() / ".insightface" / "models"
+    model_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Retry logic for race conditions during model download
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            fa = FaceAnalysis(name="buffalo_l", providers=["CPUExecutionProvider"])
+            fa.prepare(ctx_id=Config.INSIGHT_CTX, det_size=Config.DET_SIZE)
+            logger.info("Model loaded OK")
+            return fa
+        except FileExistsError as e:
+            # Race condition: multiple workers downloading simultaneously
+            if attempt < max_retries - 1:
+                logger.warning(f"Model load race condition (attempt {attempt + 1}/{max_retries}): {e}")
+                time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+            else:
+                logger.error(f"Model load failed after {max_retries} attempts: {e}")
+                raise
+        except Exception as e:
+            logger.error(f"Model load error: {e}")
+            raise
 
 
 # =============================================================================
 # EMBEDDINGS
 # =============================================================================
-_IMG_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+_IMG_EXT = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".gif"}
+_SKIP_DIR_NAMES = {
+    "photos", "train", "test", "validation", "valid", "default",
+    "dataset", "data", "images", "image", "img", "imgs", "files"
+}
 
 
-def _l2(v):
-    if v.ndim == 1:
-        return v / (np.linalg.norm(v) + 1e-10)
-    return v / (np.linalg.norm(v, axis=1, keepdims=True) + 1e-10)
+def _l2(vec):
+    vec = np.asarray(vec, dtype=np.float32)
+    norm = np.linalg.norm(vec)
+    if norm <= 0:
+        return vec
+    return vec / norm
 
 
-def _bgr2b64(bgr, q=82):
-    _, buf = cv2.imencode(".jpg", bgr, [cv2.IMWRITE_JPEG_QUALITY, q])
+def _bgr2b64(bgr, quality):
+    if bgr is None:
+        return None
+    ok, buf = cv2.imencode(".jpg", bgr, [cv2.IMWRITE_JPEG_QUALITY, int(quality)])
+    if not ok:
+        return None
     return "data:image/jpeg;base64," + base64.b64encode(buf.tobytes()).decode()
 
 
 def _emb_from_bgr(bgr):
+    if face_app is None or bgr is None:
+        return None
     faces = face_app.get(bgr)
     if not faces:
         return None
-    best = max(faces, key=lambda f: (f.bbox[2]-f.bbox[0])*(f.bbox[3]-f.bbox[1]))
-    return _l2(best.embedding.astype(np.float32))
+    return _l2(faces[0].embedding.astype(np.float32))
 
 
-def precompute_embeddings():
-    logger.info(f"Scanning {Config.DIR_PHOTOS}/...")
-    base = Path(Config.DIR_PHOTOS)
+def _download_hf_dataset():
+    """
+    Download student photos dataset from Hugging Face if configured.
+    Returns the path to the photos directory.
+    Falls back to local DIR_PHOTOS if HF_DATASET_REPO is not configured.
+    """
+    if not Config.HF_DATASET_REPO:
+        logger.info(f"Using local photos directory: {Config.DIR_PHOTOS}")
+        return Config.DIR_PHOTOS
+    
+    try:
+        logger.info(f"Downloading HF dataset: {Config.HF_DATASET_REPO}...")
+        dataset_path = snapshot_download(
+            repo_id=Config.HF_DATASET_REPO,
+            repo_type="dataset",
+            cache_dir=Config.HF_CACHE_DIR,
+            local_dir_use_symlinks=False,
+            token=os.environ.get("HF_TOKEN") or None,
+        )
+        logger.info(f"HF dataset downloaded to: {dataset_path}")
+        
+        # Check if photos are in a subdirectory (e.g., "photos" folder)
+        # If they are, return that path; otherwise return the dataset root
+        photos_subdir = Path(dataset_path) / "photos"
+        if photos_subdir.exists() and photos_subdir.is_dir():
+            logger.info(f"Found photos subdirectory: {photos_subdir}")
+            return str(photos_subdir)
+        
+        return dataset_path
+    except Exception as e:
+        logger.error(f"Failed to download HF dataset: {e}")
+        logger.warning(f"Falling back to local photos directory: {Config.DIR_PHOTOS}")
+        return Config.DIR_PHOTOS
+
+
+def precompute_embeddings(photos_path=None):
+    # Use provided path, download from HF, or fall back to local photos
+    if photos_path is None:
+        photos_path = _download_hf_dataset()
+    
+    logger.info(f"Scanning {photos_path}/...")
+    base = Path(photos_path)
+    if not base.exists():
+        logger.warning(f"Photos directory not found: {photos_path}")
+        return
+    
     store = {}; imgs = {}; ok = 0; fail = 0; by_gr = {}
-    for item in sorted(base.iterdir()):
-        if item.is_dir():
-            gr = item.name.strip()
+    try:
+        for item in sorted(base.rglob("*")):
+            if not item.is_file() or item.suffix.lower() not in _IMG_EXT:
+                continue
+
+            rel_parts = item.relative_to(base).parts
+            gr = None
+
+            # Prefer the nearest meaningful ancestor folder as the class / GR folder.
+            for part in reversed(rel_parts[:-1]):
+                name = str(part).strip()
+                if name and name.lower() not in _SKIP_DIR_NAMES:
+                    gr = name
+                    break
+
+            # Fallback: use filename stem if the file lives at the dataset root.
+            if not gr:
+                gr = item.stem.strip()
+
             if gr:
-                ps = sorted(p for p in item.iterdir() if p.suffix.lower() in _IMG_EXT)
-                if ps:
-                    by_gr.setdefault(gr, []).extend(ps)
-        elif item.is_file() and item.suffix.lower() in _IMG_EXT:
-            gr = item.stem.strip()
-            if gr and gr not in by_gr:
-                by_gr[gr] = [item]
-    logger.info(f"Found {len(by_gr)} students with photos")
-    for gr_no, paths in sorted(by_gr.items()):
-        embs = []; thumb = None
-        for p in paths:
-            bgr = cv2.imread(str(p))
-            if bgr is None: fail += 1; continue
-            emb = _emb_from_bgr(bgr)
-            if emb is None: fail += 1; continue
-            embs.append(emb)
-            if thumb is None: thumb = bgr
-        if not embs:
-            continue
-        store[gr_no] = _l2(np.mean(np.stack(embs), axis=0)).reshape(1, -1)
-        imgs[gr_no] = _bgr2b64(thumb, Config.ENROLL_JPEG_Q)
-        ok += 1
-        logger.info(f"  gr={gr_no} {len(embs)} photo(s)")
-    with emb_lock:
-        embedding_store.clear(); embedding_store.update(store)
-        enrollment_imgs.clear(); enrollment_imgs.update(imgs)
-    logger.info(f"Embeddings | ok={ok} fail={fail} total={len(store)}")
+                by_gr.setdefault(gr, []).append(item)
+        logger.info(f"Found {len(by_gr)} students with photos")
+        for gr_no, paths in sorted(by_gr.items()):
+            embs = []; thumb = None
+            for p in paths:
+                bgr = cv2.imread(str(p))
+                # GIF files: cv2.imread may fail or return None for animated GIFs
+                # Try reading first frame with cv2.VideoCapture as fallback
+                if bgr is None and p.suffix.lower() == ".gif":
+                    try:
+                        cap = cv2.VideoCapture(str(p))
+                        ret, bgr = cap.read()
+                        cap.release()
+                        if not ret:
+                            bgr = None
+                    except Exception:
+                        bgr = None
+                # PIL fallback for GIF and other formats cv2 can't read
+                if bgr is None:
+                    try:
+                        pil_img = Image.open(str(p))
+                        pil_img = pil_img.convert("RGB")
+                        bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+                    except Exception:
+                        bgr = None
+                if bgr is None: fail += 1; continue
+                emb = _emb_from_bgr(bgr)
+                if emb is None: fail += 1; continue
+                embs.append(emb)
+                if thumb is None: thumb = bgr
+            if not embs:
+                continue
+            store[gr_no] = _l2(np.mean(np.stack(embs), axis=0)).reshape(1, -1)
+            imgs[gr_no] = _bgr2b64(thumb, Config.ENROLL_JPEG_Q)
+            ok += 1
+            logger.info(f"  gr={gr_no} {len(embs)} photo(s)")
+        with emb_lock:
+            embedding_store.clear(); embedding_store.update(store)
+            enrollment_imgs.clear(); enrollment_imgs.update(imgs)
+        logger.info(f"Embeddings | ok={ok} fail={fail} total={len(store)}")
+    except Exception as e:
+        logger.error(f"Error loading embeddings: {e}")
 
 
 # =============================================================================
@@ -1315,19 +1429,22 @@ def sse_stream():
 
 @app.route("/health", methods=["GET", "OPTIONS"])
 def health():
+    """
+    Fast health check for container orchestration (HF Spaces, K8s, etc.)
+    Returns 200 as long as Flask is responsive, even during startup.
+    Detailed status available at /debug endpoint.
+    """
     if request.method == "OPTIONS":
         return jsonify({}), 200
-    with emb_lock:
-        n = len(embedding_store); grs = sorted(embedding_store.keys())
-    with _bus_loc_lock:
-        bl = copy.deepcopy(_bus_location)
+    
+    # Simple fast check - just confirm app is running
+    # Detailed checks go to /debug endpoint to avoid blocking health checks
     return jsonify({
-        "status": "ok", "version": "11.0.0",
-        "model_loaded": face_app is not None,
-        "students_loaded": n, "gr_numbers": grs,
-        "bus_check_mode": Config.BUS_CHECK_MODE,
-        "bus_location": bl, "timestamp": datetime.now().isoformat(),
-    })
+        "status": "ok",
+        "version": "11.0.0",
+        "service": "transbuddy-server",
+        "timestamp": datetime.now().isoformat(),
+    }), 200
 
 
 @app.route("/debug", methods=["GET", "OPTIONS"])
@@ -1402,34 +1519,80 @@ def debug():
 # =============================================================================
 # STARTUP
 # =============================================================================
+_startup_done = False
+_startup_lock = threading.Lock()
+
 def startup():
-    global face_app
-    logger.info("=" * 64)
-    logger.info("  TransBuddy Server v11.0.0 — Marwadi University")
-    logger.info("=" * 64)
-    logger.info(f"  DB          : {Config.DB_HOST}/{Config.DB_NAME}")
-    logger.info(f"  Photos      : {Config.DIR_PHOTOS}/")
-    logger.info(f"  Confidence  : {Config.CONFIDENCE_THRESHOLD}")
-    logger.info(f"  Margin      : {Config.MARGIN_THRESHOLD}")
-    logger.info(f"  Bus mode    : {Config.BUS_CHECK_MODE}")
-    logger.info(f"  Daily slots : morning (before 14:00) + evening (14:00+)")
-    logger.info("=" * 64)
-    logger.info("  ROUTES (per face — strict single route):")
-    logger.info("    A. No photo match  -> /not_uni_student")
-    logger.info("    B. Photo, no DB    -> /invalid_alerts (not_in_db)")
-    logger.info("    C. In DB, no bus   -> /invalid_alerts (no_bus_policy)")
-    logger.info("    D. Bus, UNPAID     -> /unpaid_students")
-    logger.info("    E. Bus, PAID       -> /valid_students (GRANTED)")
-    logger.info("=" * 64)
-    _init_db_pool()
-    test_db()
-    face_app = _init_model()
-    precompute_embeddings()
-    threading.Thread(target=_save_worker, daemon=True, name="save").start()
-    _cleanup_old_proofs()
-    logger.info("  http://0.0.0.0:5000")
-    logger.info("  http://localhost:5000/debug")
-    logger.info("=" * 64)
+    """Initialize app on first request (thread-safe, runs exactly once)"""
+    global face_app, _startup_done
+    
+    with _startup_lock:
+        if _startup_done:
+            return  # Already initialized
+        
+        logger.info("=" * 64)
+        logger.info("  TransBuddy Server v11.0.0 — Marwadi University")
+        logger.info("=" * 64)
+        logger.info(f"  DB          : {Config.DB_HOST}/{Config.DB_NAME}")
+        if Config.HF_DATASET_REPO:
+            logger.info(f"  Photos      : {Config.HF_DATASET_REPO} (Hugging Face - will download asynchronously)")
+        else:
+            logger.info(f"  Photos      : {Config.DIR_PHOTOS}/ (Local)")
+        logger.info(f"  Confidence  : {Config.CONFIDENCE_THRESHOLD}")
+        logger.info(f"  Margin      : {Config.MARGIN_THRESHOLD}")
+        logger.info(f"  Bus mode    : {Config.BUS_CHECK_MODE}")
+        logger.info(f"  Daily slots : morning (before 14:00) + evening (14:00+)")
+        logger.info("=" * 64)
+        logger.info("  ROUTES (per face — strict single route):")
+        logger.info("    A. No photo match  -> /not_uni_student")
+        logger.info("    B. Photo, no DB    -> /invalid_alerts (not_in_db)")
+        logger.info("    C. In DB, no bus   -> /invalid_alerts (no_bus_policy)")
+        logger.info("    D. Bus, UNPAID     -> /unpaid_students")
+        logger.info("    E. Bus, PAID       -> /valid_students (GRANTED)")
+        logger.info("=" * 64)
+        
+        # Initialize DB (non-blocking on failure)
+        try:
+            _init_db_pool()
+            test_db()
+            logger.info("  ✅ Database: OK")
+        except Exception as e:
+            logger.warning(f"  ⚠️ Database: {e}")
+            logger.warning("  Continuing without DB (read-only mode)")
+        
+        # Load face recognition model
+        try:
+            face_app = _init_model()
+            logger.info("  ✅ Face Model: Loaded")
+        except Exception as e:
+            logger.error(f"  ❌ Face Model: {e}")
+            logger.error("  App will not work without model!")
+        
+        # Load embeddings from local photos (fast startup)
+        precompute_embeddings(photos_path=Config.DIR_PHOTOS)
+        
+        # Download HF dataset in background if configured
+        if Config.HF_DATASET_REPO:
+            def _bg_download():
+                time.sleep(5)  # Wait for app to be ready
+                try:
+                    logger.info("Background: Starting HF dataset download...")
+                    dataset_path = _download_hf_dataset()
+                    precompute_embeddings(photos_path=dataset_path)
+                except Exception as e:
+                    logger.error(f"Background download failed: {e}")
+            threading.Thread(target=_bg_download, daemon=True, name="hf-download").start()
+        
+        threading.Thread(target=_save_worker, daemon=True, name="save").start()
+        _cleanup_old_proofs()
+        logger.info("  http://0.0.0.0:5000")
+        logger.info("  http://localhost:5000/debug")
+        logger.info("=" * 64)
+        
+        _startup_done = True
+
+
+startup()
 
 startup()
 if __name__ == "__main__":
