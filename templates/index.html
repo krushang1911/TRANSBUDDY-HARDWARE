@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>TransBuddy — Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        /* ══════════════════ RESET + ROOT ══════════════════ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --ink0: #06090f;
+            --ink1: #0c1220;
+            --ink2: #111827;
+            --ink3: #1a2535;
+            --ink4: #243042;
+            --rim: #1e3047;
+            --rim2: #2a4060;
+            --rim3: #35506e;
+            --azure: #0ea5e9;
+            --azure2: #0284c7;
+            --azure3: #075985;
+            --lime: #22c55e;
+            --lime2: #16a34a;
+            --fire: #f59e0b;
+            --fire2: #d97706;
+            --rose: #ef4444;
+            --rose2: #dc2626;
+            --violet: #a855f7;
+            --violet2: #9333ea;
+            --snow: #f0f9ff;
+            --mist: #94a3b8;
+            --fog: #4b6280;
+            --shadow: #2a3d55;
+            --fh: 'Bebas Neue', sans-serif;
+            --fb: 'Outfit', sans-serif;
+            --fm: 'Space Mono', monospace;
+            --r: 10px;
+            --rr: 6px;
+        }
+
+        html,
+        body {
+            height: 100%;
+            background: var(--ink0);
+            color: var(--snow);
+            font-family: var(--fb);
+            font-size: 13px;
+            line-height: 1.5;
+            overflow: hidden
+        }
+
+        /* scanline texture */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, .07) 2px, rgba(0, 0, 0, .07) 4px);
+            pointer-events: none;
+            z-index: 9999
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--ink1)
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--rim2);
+            border-radius: 2px
+        }
+
+        /* ══════════════════ LAYOUT ══════════════════ */
+        .root {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            overflow: hidden
+        }
+
+        /* ── HEADER ── */
+        .hdr {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 20px;
+            background: var(--ink1);
+            border-bottom: 1px solid var(--rim);
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hdr::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--azure), transparent);
+            opacity: .4
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--azure3), var(--azure));
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            fill: var(--ink0)
+        }
+
+        .logo-title {
+            font-family: var(--fh);
+            font-size: 22px;
+            letter-spacing: 2px;
+            color: var(--snow);
+            line-height: 1
+        }
+
+        .logo-sub {
+            font-size: 10px;
+            color: var(--fog);
+            letter-spacing: 1.5px;
+            font-family: var(--fm);
+            margin-top: 1px
+        }
+
+        .hdr-stats {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+            flex-wrap: wrap;
+            margin-left: 10px
+        }
+
+        .hs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--ink2);
+            border: 1px solid var(--rim);
+            border-radius: 40px;
+            padding: 5px 13px
+        }
+
+        .hs-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        .hs-n {
+            font-family: var(--fh);
+            font-size: 18px;
+            line-height: 1
+        }
+
+        .hs-l {
+            font-size: 10px;
+            color: var(--mist);
+            font-family: var(--fm);
+            line-height: 1
+        }
+
+        .hdr-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto
+        }
+
+        .srv-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--lime);
+            animation: srv-pulse 2s ease infinite;
+            flex-shrink: 0
+        }
+
+        .srv-dot.off {
+            background: var(--rose);
+            animation: none
+        }
+
+        @keyframes srv-pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, .5)
+            }
+
+            60% {
+                opacity: .8;
+                box-shadow: 0 0 0 5px rgba(34, 197, 94, 0)
+            }
+        }
+
+        .srv-lbl {
+            font-family: var(--fm);
+            font-size: 10px;
+            color: var(--mist)
+        }
+
+        .clock {
+            font-family: var(--fm);
+            font-size: 13px;
+            color: var(--azure);
+            background: var(--ink2);
+            border: 1px solid var(--rim);
+            padding: 5px 12px;
+            border-radius: 40px
+        }
+
+        /* ── BODY ── */
+        .body {
+            display: grid;
+            grid-template-columns: 240px 1fr 300px;
+            height: 100%;
+            overflow: hidden
+        }
+
+        /* ══════════════════ SIDEBAR ══════════════════ */
+        .sidebar {
+            background: var(--ink1);
+            border-right: 1px solid var(--rim);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sb-head {
+            padding: 12px 14px 10px;
+            border-bottom: 1px solid var(--rim);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .sb-title {
+            font-family: var(--fh);
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            color: var(--mist)
+        }
+
+        .bus-count-badge {
+            font-family: var(--fm);
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: var(--ink3);
+            border: 1px solid var(--rim2);
+            color: var(--azure)
+        }
+
+        .sb-search {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--rim);
+            flex-shrink: 0
+        }
+
+        .sb-search input {
+            width: 100%;
+            background: var(--ink2);
+            border: 1px solid var(--rim);
+            border-radius: 6px;
+            color: var(--snow);
+            font-family: var(--fm);
+            font-size: 11px;
+            padding: 6px 10px;
+            outline: none;
+            transition: border-color .2s
+        }
+
+        .sb-search input:focus {
+            border-color: var(--azure)
+        }
+
+        .sb-list {
+            flex: 1;
+            overflow-y: auto
+        }
+
+        .bus-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(30, 48, 71, .5);
+            transition: background .15s;
+            position: relative;
+        }
+
+        .bus-item:hover {
+            background: var(--ink2)
+        }
+
+        .bus-item.active {
+            background: rgba(14, 165, 233, .08);
+            border-left: 3px solid var(--azure)
+        }
+
+        .bus-item.active .bus-no {
+            color: var(--azure)
+        }
+
+        .bus-thumb {
+            width: 52px;
+            height: 36px;
+            border-radius: 5px;
+            object-fit: cover;
+            background: var(--ink3);
+            flex-shrink: 0;
+            border: 1px solid var(--rim)
+        }
+
+        .bus-thumb-ph {
+            width: 52px;
+            height: 36px;
+            border-radius: 5px;
+            background: var(--ink3);
+            flex-shrink: 0;
+            border: 1px solid var(--rim);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .bus-thumb-ph svg {
+            width: 16px;
+            height: 16px;
+            fill: var(--fog)
+        }
+
+        .bus-meta {
+            flex: 1;
+            min-width: 0
+        }
+
+        .bus-no {
+            font-family: var(--fh);
+            font-size: 14px;
+            letter-spacing: .5px;
+            color: var(--snow);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .bus-sub {
+            font-size: 10px;
+            color: var(--fog);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: var(--fm)
+        }
+
+        .bus-indicator {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0
+        }
+
+        .bi-active {
+            background: var(--lime);
+            animation: srv-pulse 2s ease infinite
+        }
+
+        .bi-idle {
+            background: var(--fire)
+        }
+
+        .bi-offline {
+            background: var(--rose);
+            animation: none
+        }
+
+        /* Stat pills on bus item */
+        .bus-pills {
+            display: flex;
+            gap: 3px;
+            margin-top: 3px;
+            flex-wrap: wrap
+        }
+
+        .bus-pill {
+            font-size: 9px;
+            font-family: var(--fm);
+            padding: 1px 5px;
+            border-radius: 3px
+        }
+
+        .bp-g {
+            background: rgba(34, 197, 94, .15);
+            color: var(--lime)
+        }
+
+        .bp-a {
+            background: rgba(245, 158, 11, .15);
+            color: var(--fire)
+        }
+
+        .bp-r {
+            background: rgba(239, 68, 68, .15);
+            color: var(--rose)
+        }
+
+        /* ══════════════════ MAIN PANEL ══════════════════ */
+        .main {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--ink0)
+        }
+
+        /* Bus info bar */
+        .bus-infobar {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 16px;
+            background: var(--ink1);
+            border-bottom: 1px solid var(--rim);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+
+        .bus-infobar .bi-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--ink2);
+            border: 1px solid var(--rim);
+            border-radius: 6px;
+            padding: 5px 10px;
+        }
+
+        .bi-chip-icon {
+            width: 18px;
+            height: 18px;
+            opacity: .5
+        }
+
+        .bi-chip-label {
+            font-size: 10px;
+            color: var(--fog);
+            font-family: var(--fm);
+            display: block;
+            line-height: 1
+        }
+
+        .bi-chip-value {
+            font-size: 12px;
+            color: var(--snow);
+            font-weight: 500;
+            display: block;
+            line-height: 1.3
+        }
+
+        .bus-infobar .no-bus-sel {
+            color: var(--fog);
+            font-family: var(--fm);
+            font-size: 12px;
+            padding: 8px 0
+        }
+
+        /* Camera + location grid */
+        .cam-loc-row {
+            display: grid;
+            grid-template-columns: 1fr 260px;
+            gap: 12px;
+            padding: 12px 14px;
+            flex-shrink: 0
+        }
+
+        /* Camera */
+        .cam-card {
+            background: var(--ink1);
+            border: 1px solid var(--rim);
+            border-radius: var(--r);
+            overflow: hidden
+        }
+
+        .cam-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--rim);
+            background: var(--ink2)
+        }
+
+        .cam-title {
+            font-family: var(--fh);
+            font-size: 13px;
+            letter-spacing: 1px;
+            color: var(--mist);
+            display: flex;
+            align-items: center;
+            gap: 7px
+        }
+
+        .rec-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--rose);
+            animation: blink 1s step-end infinite
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0
+            }
+        }
+
+        .cam-feed-wrap {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #000
+        }
+
+        #cam-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none
+        }
+
+        .cam-ph {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--fog);
+            font-size: 11px
+        }
+
+        .cam-ph svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--shadow)
+        }
+
+        .cam-corners::before,
+        .cam-corners::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--azure);
+            border-style: solid;
+            opacity: .6
+        }
+
+        .cam-corners::before {
+            top: 8px;
+            left: 8px;
+            border-width: 2px 0 0 2px
+        }
+
+        .cam-corners::after {
+            bottom: 8px;
+            right: 8px;
+            border-width: 0 2px 2px 0
+        }
+
+        .cam-corners2::before,
+        .cam-corners2::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: var(--azure);
+            border-style: solid;
+            opacity: .6
+        }
+
+        .cam-corners2::before {
+            top: 8px;
+            right: 8px;
+            border-width: 2px 2px 0 0
+        }
+
+        .cam-corners2::after {
+            bottom: 8px;
+            left: 8px;
+            border-width: 0 0 2px 2px
+        }
+
+        .live-badge {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(239, 68, 68, .9);
+            font-family: var(--fh);
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .cam-ts {
+            position: absolute;
+            bottom: 8px;
+            left: 10px;
+            font-family: var(--fm);
+            font-size: 10px;
+            color: rgba(255, 255, 255, .5)
+        }
+
+        .cam-stop {
+            position: absolute;
+            bottom: 8px;
+            right: 10px;
+            font-family: var(--fh);
+            font-size: 11px;
+            color: rgba(14, 165, 233, .9);
+            font-weight: 600;
+            max-width: 160px;
+            text-align: right;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        /* Location card */
+        .loc-card {
+            background: var(--ink1);
+            border: 1px solid var(--rim);
+            border-radius: var(--r);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column
+        }
+
+        .loc-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--rim);
+            background: var(--ink2);
+            flex-shrink: 0
+        }
+
+        .loc-title {
+            font-family: var(--fh);
+            font-size: 13px;
+            letter-spacing: 1px;
+            color: var(--mist);
+            display: flex;
+            align-items: center;
+            gap: 7px
+        }
+
+        .gps-anim {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--azure);
+            position: relative;
+            flex-shrink: 0
+        }
+
+        .gps-anim::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border: 1.5px solid var(--azure);
+            border-radius: 50%;
+            animation: gps-r 1.5s ease-out infinite
+        }
+
+        @keyframes gps-r {
+            0% {
+                transform: scale(.5);
+                opacity: 1
+            }
+
+            100% {
+                transform: scale(2.2);
+                opacity: 0
+            }
+        }
+
+        .loc-body {
+            flex: 1;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px
+        }
+
+        .loc-stop {
+            font-family: var(--fh);
+            font-size: 18px;
+            letter-spacing: .5px;
+            color: var(--azure);
+            line-height: 1.2
+        }
+
+        .loc-coords {
+            font-family: var(--fm);
+            font-size: 10px;
+            color: var(--fog);
+            display: flex;
+            gap: 10px
+        }
+
+        .loc-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px
+        }
+
+        .loc-cell {
+            background: var(--ink2);
+            border: 1px solid var(--rim);
+            border-radius: 5px;
+            padding: 6px 8px
+        }
+
+        .loc-cell-l {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--shadow);
+            font-family: var(--fh)
+        }
+
+        .loc-cell-v {
+            font-size: 12px;
+            color: var(--snow);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px
+        }
+
+        .qual-row {
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .qual-n {
+            font-family: var(--fh);
+            font-size: 20px;
+            min-width: 44px
+        }
+
+        .qual-bar {
+            flex: 1;
+            height: 5px;
+            background: var(--ink3);
+            border-radius: 3px;
+            overflow: hidden
+        }
+
+        .qual-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .5s
+        }
+
+        /* Detection results */
+        .detections {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 14px 14px
+        }
+
+        .det-tab-bar {
+            display: flex;
+            gap: 2px;
+            padding: 10px 14px 0;
+            flex-shrink: 0;
+            border-top: 1px solid var(--rim)
+        }
+
+        .det-tab {
+            font-family: var(--fh);
+            font-size: 12px;
+            letter-spacing: .5px;
+            padding: 6px 14px;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            color: var(--fog);
+            transition: all .2s
+        }
+
+        .det-tab.active {
+            background: var(--ink1);
+            border-color: var(--rim);
+            color: var(--snow)
+        }
+
+        .det-tab .cnt {
+            font-family: var(--fm);
+            font-size: 9px;
+            padding: 1px 5px;
+            border-radius: 10px;
+            margin-left: 4px
+        }
+
+        .face-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 10px
+        }
+
+        .face-card {
+            background: var(--ink1);
+            border: 1px solid var(--rim);
+            border-radius: var(--r);
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            align-items: flex-start;
+            position: relative;
+            overflow: hidden;
+            animation: fc-in .3s ease;
+        }
+
+        @keyframes fc-in {
+            from {
+                opacity: 0;
+                transform: translateY(6px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .face-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px
+        }
+
+        .fc-valid::before {
+            background: var(--lime)
+        }
+
+        .fc-unpaid::before {
+            background: var(--fire)
+        }
+
+        .fc-invalid::before {
+            background: var(--rose)
+        }
+
+        .fc-unknown::before {
+            background: var(--azure)
+        }
+
+        .fc-cool::before {
+            background: var(--fog)
+        }
+
+        .face-card.fc-valid {
+            border-color: rgba(34, 197, 94, .25)
+        }
+
+        .face-card.fc-unpaid {
+            border-color: rgba(245, 158, 11, .25)
+        }
+
+        .face-card.fc-invalid {
+            border-color: rgba(239, 68, 68, .25)
+        }
+
+        .face-card.fc-unknown {
+            border-color: rgba(14, 165, 233, .25)
+        }
+
+        .face-img {
+            width: 54px;
+            height: 54px;
+            border-radius: 7px;
+            object-fit: cover;
+            background: var(--ink3);
+            border: 1px solid var(--rim);
+            flex-shrink: 0
+        }
+
+        .face-img-ph {
+            width: 54px;
+            height: 54px;
+            border-radius: 7px;
+            background: var(--ink3);
+            border: 1px solid var(--rim);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .face-body {
+            flex: 1;
+            min-width: 0
+        }
+
+        .face-name {
+            font-family: var(--fh);
+            font-size: 16px;
+            letter-spacing: .3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .face-gr {
+            font-family: var(--fm);
+            font-size: 10px;
+            color: var(--fog);
+            margin-bottom: 5px
+        }
+
+        .face-tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap
+        }
+
+        .ftag {
+            font-size: 9px;
+            font-family: var(--fm);
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--ink3);
+            color: var(--mist);
+            border: 1px solid var(--rim)
+        }
+
+        .face-status-col {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 5px;
+            flex-shrink: 0
+        }
+
+        .pill {
+            font-family: var(--fh);
+            font-size: 10px;
+            letter-spacing: 1px;
+            padding: 4px 8px;
+            border-radius: 5px;
+            white-space: nowrap
+        }
+
+        .pill-g {
+            background: rgba(34, 197, 94, .15);
+            color: var(--lime);
+            border: 1px solid rgba(34, 197, 94, .3)
+        }
+
+        .pill-a {
+            background: rgba(245, 158, 11, .15);
+            color: var(--fire);
+            border: 1px solid rgba(245, 158, 11, .3)
+        }
+
+        .pill-r {
+            background: rgba(239, 68, 68, .15);
+            color: var(--rose);
+            border: 1px solid rgba(239, 68, 68, .3)
+        }
+
+        .pill-v {
+            background: rgba(168, 85, 247, .15);
+            color: var(--violet);
+            border: 1px solid rgba(168, 85, 247, .3)
+        }
+
+        .pill-c {
+            background: rgba(14, 165, 233, .15);
+            color: var(--azure);
+            border: 1px solid rgba(14, 165, 233, .3)
+        }
+
+        .pill-x {
+            background: rgba(75, 98, 128, .15);
+            color: var(--fog);
+            border: 1px solid rgba(75, 98, 128, .3)
+        }
+
+        .conf-bar-w {
+            height: 3px;
+            background: var(--ink3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 5px
+        }
+
+        .conf-bar-f {
+            height: 100%;
+            border-radius: 2px;
+            transition: width .5s
+        }
+
+        .conf-txt {
+            font-size: 9px;
+            font-family: var(--fm);
+            color: var(--shadow);
+            margin-top: 2px
+        }
+
+        .empty-st {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 40px 20px;
+            color: var(--shadow);
+            font-size: 11px;
+            text-align: center
+        }
+
+        .empty-st svg {
+            fill: var(--shadow)
+        }
+
+        /* ══════════════════ RIGHT PANEL ══════════════════ */
+        .rpanel {
+            background: var(--ink1);
+            border-left: 1px solid var(--rim);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .rp-head {
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--rim);
+            font-family: var(--fh);
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            color: var(--mist);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0
+        }
+
+        .rp-tabs {
+            display: flex;
+            gap: 2px;
+            padding: 8px 10px;
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--rim)
+        }
+
+        .rp-tab {
+            font-family: var(--fh);
+            font-size: 11px;
+            letter-spacing: .5px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: var(--fog);
+            transition: all .2s;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 4px
+        }
+
+        .rp-tab.active {
+            background: var(--ink2);
+            border-color: var(--rim2);
+            color: var(--snow)
+        }
+
+        .rp-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%
+        }
+
+        .rp-list {
+            flex: 1;
+            overflow-y: auto
+        }
+
+        /* Student row in right panel */
+        .sp-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-bottom: 1px solid rgba(30, 48, 71, .5);
+            cursor: default;
+            transition: background .15s;
+            animation: fade-in .25s ease
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        .sp-row:hover {
+            background: var(--ink2)
+        }
+
+        .sp-av {
+            width: 34px;
+            height: 34px;
+            border-radius: 7px;
+            object-fit: cover;
+            background: var(--ink3);
+            border: 1px solid var(--rim);
+            flex-shrink: 0
+        }
+
+        .sp-av-ph {
+            width: 34px;
+            height: 34px;
+            border-radius: 7px;
+            background: var(--ink3);
+            border: 1px solid var(--rim);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--fh);
+            font-size: 12px;
+            color: var(--fog)
+        }
+
+        .sp-body {
+            flex: 1;
+            min-width: 0
+        }
+
+        .sp-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--snow);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .sp-sub {
+            font-size: 10px;
+            color: var(--fog);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-family: var(--fm)
+        }
+
+        .sp-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+            flex-shrink: 0
+        }
+
+        .sp-ts {
+            font-family: var(--fm);
+            font-size: 9px;
+            color: var(--shadow)
+        }
+
+        .sp-bus {
+            font-size: 9px;
+            color: var(--azure2);
+            font-family: var(--fm)
+        }
+
+        .rp-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 40px 16px;
+            color: var(--shadow);
+            font-size: 11px;
+            text-align: center
+        }
+
+        .rp-empty svg {
+            fill: var(--shadow)
+        }
+
+        /* Reason tags */
+        .rtag {
+            font-size: 9px;
+            font-family: var(--fm);
+            padding: 2px 5px;
+            border-radius: 3px
+        }
+
+        .rt-nodb {
+            background: rgba(168, 85, 247, .15);
+            color: var(--violet)
+        }
+
+        .rt-nobus {
+            background: rgba(245, 158, 11, .15);
+            color: var(--fire)
+        }
+
+        .rt-unknown {
+            background: rgba(239, 68, 68, .15);
+            color: var(--rose)
+        }
+
+        /* toast */
+        .toast {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            background: var(--ink3);
+            border: 1px solid var(--rose);
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 11px;
+            color: var(--rose);
+            font-family: var(--fm);
+            opacity: 0;
+            transform: translateY(6px);
+            transition: all .3s;
+            pointer-events: none;
+            z-index: 1000
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0)
+        }
+
+        /* no-select */
+        .bus-item,
+        .det-tab,
+        .rp-tab {
+            user-select: none
+        }
+
+        /* ══════════ RESPONSIVE ══════════ */
+        @media(max-width:1100px) {
+            .body {
+                grid-template-columns: 200px 1fr
+            }
+
+            .rpanel {
+                display: none
+            }
+        }
+
+        @media(max-width:700px) {
+            .body {
+                grid-template-columns: 1fr
+            }
+
+            .sidebar {
+                display: none
+            }
+
+            .cam-loc-row {
+                grid-template-columns: 1fr
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="root">
+
+        <!-- ════════════════ HEADER ════════════════ -->
+        <header class="hdr">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 001 1h1a1 1 0 001-1v-1h8v1a1 1 0 001 1h1a1 1 0 001-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4S4 2.5 4 6zm3.5 1a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm9 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM17 13H7V6h10v7z" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="logo-title">TRANSBUDDY</div>
+                    <div class="logo-sub">MARWADI UNIVERSITY · BUS COMMAND CENTER</div>
+                </div>
+            </div>
+            <div class="hdr-stats">
+                <div class="hs">
+                    <div class="hs-dot" style="background:var(--lime)"></div>
+                    <div>
+                        <div class="hs-n" style="color:var(--lime)" id="gs-valid">0</div>
+                        <div class="hs-l">GRANTED</div>
+                    </div>
+                </div>
+                <div class="hs">
+                    <div class="hs-dot" style="background:var(--fire)"></div>
+                    <div>
+                        <div class="hs-n" style="color:var(--fire)" id="gs-unpaid">0</div>
+                        <div class="hs-l">UNPAID</div>
+                    </div>
+                </div>
+                <div class="hs">
+                    <div class="hs-dot" style="background:var(--rose)"></div>
+                    <div>
+                        <div class="hs-n" style="color:var(--rose)" id="gs-invalid">0</div>
+                        <div class="hs-l">INVALID</div>
+                    </div>
+                </div>
+                <div class="hs">
+                    <div class="hs-dot" style="background:var(--azure)"></div>
+                    <div>
+                        <div class="hs-n" style="color:var(--azure)" id="gs-notuni">0</div>
+                        <div class="hs-l">UNKNOWN</div>
+                    </div>
+                </div>
+                <div class="hs">
+                    <div class="hs-dot" style="background:var(--lime)"></div>
+                    <div>
+                        <div class="hs-n" id="gs-buses">0</div>
+                        <div class="hs-l">ACTIVE BUSES</div>
+                    </div>
+                </div>
+            </div>
+            <div class="hdr-right">
+                <div
+                    style="display:flex;align-items:center;gap:6px;background:var(--ink2);border:1px solid var(--rim);border-radius:40px;padding:5px 12px">
+                    <div class="srv-dot" id="srv-dot"></div>
+                    <span class="srv-lbl" id="srv-lbl">Connecting…</span>
+                </div>
+                <div class="clock" id="clock">--:--:--</div>
+            </div>
+        </header>
+
+        <!-- ════════════════ BODY ════════════════ -->
+        <div class="body">
+
+            <!-- SIDEBAR -->
+            <div class="sidebar">
+                <div class="sb-head">
+                    <span class="sb-title">FLEET</span>
+                    <span class="bus-count-badge" id="bus-total">0 BUSES</span>
+                </div>
+                <div class="sb-search">
+                    <input id="bus-search" placeholder="Search bus…" oninput="filterBuses(this.value)" />
+                </div>
+                <div class="sb-list" id="bus-list">
+                    <div style="padding:30px 16px;text-align:center;color:var(--shadow);font-size:11px">Loading fleet…
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN PANEL -->
+            <div class="main">
+
+                <!-- Bus info bar -->
+                <div class="bus-infobar" id="bus-infobar">
+                    <span class="no-bus-sel">← Select a bus to view details</span>
+                </div>
+
+                <!-- Camera + location -->
+                <div class="cam-loc-row">
+                    <!-- Camera -->
+                    <div class="cam-card">
+                        <div class="cam-head">
+                            <div class="cam-title">
+                                <div class="rec-dot"></div>
+                                LIVE FEED
+                            </div>
+                            <div style="display:flex;gap:6px;align-items:center">
+                                <span style="font-family:var(--fm);font-size:10px;color:var(--azure)"
+                                    id="cam-stop-lbl">—</span>
+                                <span style="font-family:var(--fm);font-size:10px;color:var(--fog)"
+                                    id="cam-ts-lbl">—</span>
+                            </div>
+                        </div>
+                        <div class="cam-feed-wrap">
+                            <div class="cam-corners"></div>
+                            <div class="cam-corners2"></div>
+                            <div class="live-badge">
+                                <div class="rec-dot"></div>LIVE
+                            </div>
+                            <img id="cam-img" alt="Live feed" onerror="camError()" />
+                            <div class="cam-ph" id="cam-ph">
+                                <svg viewBox="0 0 24 24" width="40" height="40">
+                                    <path
+                                        d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z" />
+                                </svg>
+                                <span>Select a bus to view live feed</span>
+                            </div>
+                            <div class="cam-ts" id="cam-ts">—</div>
+                            <div class="cam-stop" id="cam-stop"></div>
+                        </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="loc-card">
+                        <div class="loc-head">
+                            <div class="loc-title">
+                                <div class="gps-anim" id="gps-anim" style="background:var(--fog)"></div>
+                                GPS LOCATION
+                            </div>
+                            <span style="font-family:var(--fm);font-size:9px;color:var(--shadow)"
+                                id="gps-updated">—</span>
+                        </div>
+                        <div class="loc-body" id="loc-body">
+                            <div style="color:var(--shadow);font-size:11px;margin:auto;text-align:center">No GPS data
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detection tabs -->
+                <div class="det-tab-bar">
+                    <div class="det-tab active" onclick="switchTab('scan')" id="tab-scan">
+                        LATEST SCAN <span class="cnt" style="background:rgba(14,165,233,.15);color:var(--azure)"
+                            id="tab-scan-cnt">—</span>
+                    </div>
+                </div>
+                <div class="detections" id="detections">
+                    <div class="empty-st">
+                        <svg width="36" height="36" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z" />
+                        </svg>
+                        <span>Awaiting face detection…</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL -->
+            <div class="rpanel">
+                <div class="rp-head">
+                    EVENT LOG
+                    <span style="font-family:var(--fm);font-size:10px;color:var(--fog)">ALL BUSES</span>
+                </div>
+                <div class="rp-tabs">
+                    <div class="rp-tab active" onclick="rpSwitch('valid',this)">
+                        <div class="rp-dot" style="background:var(--lime)"></div>
+                        <span>Valid</span>
+                        <span
+                            style="font-family:var(--fm);font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(34,197,94,.1);color:var(--lime)"
+                            id="rp-valid-cnt">0</span>
+                    </div>
+                    <div class="rp-tab" onclick="rpSwitch('unpaid',this)">
+                        <div class="rp-dot" style="background:var(--fire)"></div>
+                        <span>Unpaid</span>
+                        <span
+                            style="font-family:var(--fm);font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(245,158,11,.1);color:var(--fire)"
+                            id="rp-unpaid-cnt">0</span>
+                    </div>
+                    <div class="rp-tab" onclick="rpSwitch('invalid',this)">
+                        <div class="rp-dot" style="background:var(--rose)"></div>
+                        <span>Alert</span>
+                        <span
+                            style="font-family:var(--fm);font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(239,68,68,.1);color:var(--rose)"
+                            id="rp-invalid-cnt">0</span>
+                    </div>
+                    <div class="rp-tab" onclick="rpSwitch('notuni',this)">
+                        <div class="rp-dot" style="background:var(--azure)"></div>
+                        <span>Unk</span>
+                        <span
+                            style="font-family:var(--fm);font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(14,165,233,.1);color:var(--azure)"
+                            id="rp-notuni-cnt">0</span>
+                    </div>
+                </div>
+                <div class="rp-list" id="rp-list">
+                    <div class="rp-empty">
+                        <svg viewBox="0 0 24 24" width="32" height="32">
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                        </svg>
+                        <span>No events yet</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Server offline — retrying…</div>
+
+    <script>
+        /* ════════════════════════════════════════════════════
+           CONFIG
+        ════════════════════════════════════════════════════ */
+        const BASE = '';  // set to server URL if different origin
+
+        /* ════════════════════════════════════════════════════
+           STATE
+        ════════════════════════════════════════════════════ */
+        const G = { valid: 0, unpaid: 0, invalid: 0, notuni: 0 };  // global session counters
+        let _lastStatTs = null;
+        let _selectedBus = null;   // currently selected bus_id string
+        let _allBuses = [];
+        let _rpMode = 'valid';
+        let _online = false;
+        let _camFailing = false;
+        let _camInterval = null;
+
+        /* ════════════════════════════════════════════════════
+           CLOCK
+        ════════════════════════════════════════════════════ */
+        setInterval(() => {
+            document.getElementById('clock').textContent =
+                new Date().toLocaleTimeString('en-IN', { hour12: false });
+        }, 1000);
+
+        /* ════════════════════════════════════════════════════
+           SERVER STATUS
+        ════════════════════════════════════════════════════ */
+        function setOnline(ok) {
+            if (ok === _online) return;
+            _online = ok;
+            const dot = document.getElementById('srv-dot');
+            const lbl = document.getElementById('srv-lbl');
+            const toast = document.getElementById('toast');
+            if (ok) {
+                dot.className = 'srv-dot';
+                lbl.textContent = 'Server online';
+                lbl.style.color = 'var(--lime)';
+                toast.classList.remove('show');
+            } else {
+                dot.className = 'srv-dot off';
+                lbl.textContent = 'Offline';
+                lbl.style.color = 'var(--rose)';
+                toast.classList.add('show');
+            }
+        }
+
+        /* ════════════════════════════════════════════════════
+           UTILS
+        ════════════════════════════════════════════════════ */
+        function fmtTs(iso) {
+            if (!iso) return '—';
+            try { return new Date(iso).toLocaleTimeString('en-IN', { hour12: false }); }
+            catch { return '—'; }
+        }
+        function initials(n) {
+            if (!n) return '?';
+            return n.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+        }
+        function av(b64, name, cls = 'sp-av') {
+            if (b64) return `<img class="${cls}" src="${b64}" onerror="this.style.display='none'"/>`;
+            const ph = cls.includes('sp-av') ? 'sp-av-ph' : 'face-img-ph';
+            return `<div class="${ph}">${initials(name)}</div>`;
+        }
+        function confColor(pct) {
+            return pct >= 80 ? 'var(--lime)' : pct >= 60 ? 'var(--fire)' : 'var(--rose)';
+        }
+        function busLabel(b) {
+            const bi = b.bus_info || {};
+            return bi.bus_no ? `Bus #${bi.bus_no}` : `Bus ID ${b.bus_id}`;
+        }
+
+        /* ════════════════════════════════════════════════════
+           STATUS PILLS
+        ════════════════════════════════════════════════════ */
+        function pillFor(status, category) {
+            if (category === 'no_bus_policy') return `<span class="pill pill-a">NO BUS</span>`;
+            if (category === 'not_in_db') return `<span class="pill pill-v">NOT IN DB</span>`;
+            if (category === 'not_uni_student') return `<span class="pill pill-c">UNKNOWN</span>`;
+            if (category === 'unpaid_fee') return `<span class="pill pill-a">UNPAID</span>`;
+            const m = {
+                valid_with_bus: ['pill-g', 'GRANTED'],
+                valid_without_bus: ['pill-a', 'UNPAID'],
+                invalid_person: ['pill-r', 'INVALID'],
+                invalid_database: ['pill-v', 'NO DB'],
+                not_uni: ['pill-c', 'UNKNOWN'],
+                on_cooldown: ['pill-x', 'COOLDOWN'],
+            };
+            const [c, l] = m[status] || ['pill-x', (status || '').toUpperCase()];
+            return `<span class="pill ${c}">${l}</span>`;
+        }
+        function fcClass(status) {
+            if (status === 'valid_with_bus') return 'fc-valid';
+            if (status === 'valid_without_bus') return 'fc-unpaid';
+            if (status === 'invalid_person' || status === 'invalid_database') return 'fc-invalid';
+            if (status === 'not_uni') return 'fc-unknown';
+            return 'fc-cool';
+        }
+
+        /* ════════════════════════════════════════════════════
+           CAMERA FEED
+        ════════════════════════════════════════════════════ */
+        function startCamFeed(busId) {
+            if (_camInterval) clearInterval(_camInterval);
+            const img = document.getElementById('cam-img');
+            const ph = document.getElementById('cam-ph');
+            _camFailing = false;
+
+            if (!busId) {
+                img.style.display = 'none'; ph.style.display = 'flex';
+                ph.innerHTML = `<svg viewBox="0 0 24 24" width="40" height="40" fill="var(--shadow)"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg><span>Select a bus to view live feed</span>`;
+                return;
+            }
+
+            async function fetchFrame() {
+                try {
+                    const r = await fetch(`${BASE}/live_frame_bus?bus_id=${busId}`);
+                    if (!r.ok) return;
+                    const d = await r.json();
+                    if (d.ready && d.frame) {
+                        img.src = d.frame;
+                        img.style.display = 'block'; ph.style.display = 'none';
+                        _camFailing = false;
+                        const ts = d.timestamp ? new Date(d.timestamp).toLocaleTimeString('en-IN', { hour12: false }) : '—';
+                        document.getElementById('cam-ts').textContent = ts;
+                        document.getElementById('cam-ts-lbl').textContent = ts;
+                    } else {
+                        _camFailing = true;
+                        img.style.display = 'none'; ph.style.display = 'flex';
+                        ph.innerHTML = `<svg viewBox="0 0 24 24" width="40" height="40" fill="var(--shadow)"><path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/></svg><span>Waiting for bus ${busId} stream…</span>`;
+                    }
+                } catch { }
+            }
+
+            fetchFrame();
+            _camInterval = setInterval(fetchFrame, 1500);
+        }
+        function camError() {
+            document.getElementById('cam-img').style.display = 'none';
+            document.getElementById('cam-ph').style.display = 'flex';
+        }
+
+        /* ════════════════════════════════════════════════════
+           BUS SIDEBAR
+        ════════════════════════════════════════════════════ */
+        function renderBusList(buses, filter = '') {
+            const list = document.getElementById('bus-list');
+            const flt = filter.trim().toLowerCase();
+            const shown = buses.filter(b => {
+                if (!flt) return true;
+                const bi = b.bus_info || {};
+                const busNo = String(bi.bus_no || '').toLowerCase();
+                const regNo = String(bi.bus_register_no || '').toLowerCase();
+                return busNo.includes(flt) ||
+                    regNo.includes(flt) ||
+                    String(b.bus_id).includes(flt);
+            });
+
+            document.getElementById('bus-total').textContent =
+                `${buses.filter(b => b.is_active).length}/${buses.length} ACTIVE`;
+            document.getElementById('gs-buses').textContent =
+                buses.filter(b => b.is_active).length;
+
+            if (!shown.length) {
+                list.innerHTML = `<div style="padding:24px 16px;text-align:center;color:var(--shadow);font-size:11px">No buses found</div>`;
+                return;
+            }
+
+            list.innerHTML = shown.map(b => {
+                const bi = b.bus_info || {};
+                const di = b.driver_info || {};
+                const ss = b.session_stats || {};
+                const sel = _selectedBus === String(b.bus_id);
+                const indCls = b.is_active ? 'bi-active' : 'bi-offline';
+                const driverName = di.driver_name || di.name || '';
+                const pillsHtml = [
+                    ss.valid ? `<span class="bus-pill bp-g">${ss.valid}✓</span>` : '',
+                    ss.unpaid ? `<span class="bus-pill bp-a">${ss.unpaid}₹</span>` : '',
+                    ss.invalid ? `<span class="bus-pill bp-r">${ss.invalid}!</span>` : '',
+                ].filter(Boolean).join('');
+
+                return `<div class="bus-item${sel ? ' active' : ''}" onclick="selectBus('${b.bus_id}')">
+      <div class="bus-thumb-ph"><svg viewBox="0 0 24 24" fill="var(--fog)"><path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 001 1h1a1 1 0 001-1v-1h8v1a1 1 0 001 1h1a1 1 0 001-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4S4 2.5 4 6zm3.5 1a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm9 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zM17 13H7V6h10v7z"/></svg></div>
+      <div class="bus-meta">
+        <div class="bus-no">${bi.bus_no ? '#' + bi.bus_no : 'Bus ' + b.bus_id}</div>
+        <div class="bus-sub">${bi.bus_type || ''} ${bi.capacity ? '· ' + bi.capacity + 'P' : ''} ${driverName ? '· ' + driverName : ''}</div>
+        ${pillsHtml ? `<div class="bus-pills">${pillsHtml}</div>` : ''}
+      </div>
+      <div class="bus-indicator ${indCls}"></div>
+    </div>`;
+            }).join('');
+        }
+
+        function filterBuses(val) {
+            renderBusList(_allBuses, val);
+        }
+
+        /* ════════════════════════════════════════════════════
+           SELECT BUS
+        ════════════════════════════════════════════════════ */
+        function selectBus(busId) {
+            busId = String(busId);
+            _selectedBus = busId;
+            renderBusList(_allBuses, document.getElementById('bus-search').value);
+            startCamFeed(busId);
+
+            // Find bus data
+            const bus = _allBuses.find(b => String(b.bus_id) === busId);
+            if (bus) renderBusInfoBar(bus);
+            renderScanForBus(busId);
+        }
+
+        function renderBusInfoBar(bus) {
+            const bar = document.getElementById('bus-infobar');
+            const bi = bus.bus_info || {};
+            const di = bus.driver_info || {};
+            const gps = bus.gps || {};
+
+            const driverName = di.driver_name || di.name || '—';
+            const driverPhone = di.phone_no || di.phone || di.contact || '—';
+            const driverLicense = di.license_no || di.license || '—';
+
+            const chips = [
+                { icon: '🚌', label: 'BUS NO', value: bi.bus_no || '—' },
+                { icon: '📋', label: 'REGISTRATION', value: bi.bus_register_no || '—' },
+                { icon: '🔧', label: 'TYPE', value: `${bi.bus_type || '—'} · ${bi.capacity || '?'} seats` },
+                { icon: '👤', label: 'DRIVER', value: driverName },
+                { icon: '📞', label: 'PHONE', value: driverPhone },
+                { icon: '🪪', label: 'LICENSE', value: driverLicense },
+                { icon: '📍', label: 'CURRENT STOP', value: gps.stop_name || '—' },
+                { icon: '●', label: 'STATUS', value: bus.is_active ? 'ONLINE' : 'OFFLINE', color: bus.is_active ? 'var(--lime)' : 'var(--rose)' },
+            ];
+
+            bar.innerHTML = chips.map(c => `
+    <div class="bi-chip">
+      <span style="font-size:14px">${c.icon}</span>
+      <div>
+        <span class="bi-chip-label">${c.label}</span>
+        <span class="bi-chip-value" style="${c.color ? 'color:' + c.color : ''}">${c.value}</span>
+      </div>
+    </div>`).join('');
+        }
+
+        /* ════════════════════════════════════════════════════
+           RENDER SCAN RESULTS
+        ════════════════════════════════════════════════════ */
+        let _lastScanTs = null;
+
+        function renderScanForBus(busId) {
+            // Poll latest scan and filter by bus
+            fetch(`${BASE}/upload_status`)
+                .then(r => r.json())
+                .then(d => {
+                    if (!d || d.is_idle || !d.results || !d.results.length) return;
+                    if (busId && String(d.bus_id) !== String(busId)) return;
+                    renderScan(d);
+                })
+                .catch(() => { });
+        }
+
+        function renderScan(d) {
+            if (!d || d.is_idle || !d.results || !d.results.length) {
+                document.getElementById('tab-scan-cnt').textContent = '—';
+                document.getElementById('detections').innerHTML = `
+      <div class="empty-st">
+        <svg width="36" height="36" viewBox="0 0 24 24"><path d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg>
+        <span>Awaiting face detection…</span>
+      </div>`;
+                return;
+            }
+
+            const loc = d.location || {};
+            if (loc.stop_name) {
+                document.getElementById('cam-stop').textContent = loc.stop_name;
+                document.getElementById('cam-stop-lbl').textContent = loc.stop_name;
+            }
+            if (d.timestamp) {
+                const ts = new Date(d.timestamp).toLocaleTimeString('en-IN', { hour12: false });
+                document.getElementById('cam-ts').textContent = ts;
+                document.getElementById('cam-ts-lbl').textContent = ts;
+            }
+            renderGPS(loc);
+
+            document.getElementById('tab-scan-cnt').textContent = d.face_count;
+
+            const html = d.results.map(r => {
+                const cls = fcClass(r.status);
+                const conf = Math.round((r.confidence || 0) * 100);
+                const cCol = confColor(conf);
+                const tags = [r.department, r.semester ? 'Sem ' + r.semester : null, r.shift, r.fee_status]
+                    .filter(Boolean)
+                    .map(t => `<span class="ftag">${t}</span>`).join('');
+                const capImg = r.captured_b64
+                    ? `<img class="face-img" src="${r.captured_b64}" onerror="this.style.display='none'"/>`
+                    : `<div class="face-img-ph"><svg width="24" height="24" viewBox="0 0 24 24" fill="var(--fog)"><path d="M12 2a5 5 0 100 10A5 5 0 0012 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg></div>`;
+
+                return `<div class="face-card ${cls}">
+      ${capImg}
+      <div class="face-body">
+                <div class="face-name">${r.display_name || r.name || 'Unknown Person'}</div>
+        <div class="face-gr">${r.gr_no ? 'GR: ' + r.gr_no : 'No GR'}${r.enrollment_no ? ' · ENR: ' + r.enrollment_no : ''}</div>
+        <div class="face-tags">${tags}</div>
+        <div class="conf-bar-w"><div class="conf-bar-f" style="width:${conf}%;background:${cCol}"></div></div>
+        <div class="conf-txt">${conf}% match confidence</div>
+      </div>
+      <div class="face-status-col">${pillFor(r.status, r.category)}</div>
+    </div>`;
+            }).join('');
+
+            document.getElementById('detections').innerHTML = `<div class="face-grid">${html}</div>`;
+        }
+
+        /* ════════════════════════════════════════════════════
+           GPS PANEL
+        ════════════════════════════════════════════════════ */
+        function renderGPS(loc) {
+            const body = document.getElementById('loc-body');
+            const updEl = document.getElementById('gps-updated');
+            const anim = document.getElementById('gps-anim');
+
+            if (!loc || (!loc.gps_lat && !loc.stop_name)) {
+                body.innerHTML = `<div style="color:var(--shadow);font-size:11px;margin:auto;text-align:center">No GPS data</div>`;
+                anim.style.background = 'var(--fog)';
+                return;
+            }
+            anim.style.background = 'var(--azure)';
+            if (loc.updated_at) updEl.textContent = fmtTs(loc.updated_at);
+
+            const q = loc.image_quality ? (parseFloat(loc.image_quality) * 100).toFixed(0) : null;
+            const qW = q ? Math.min(100, parseFloat(q)) : 0;
+            const qC = qW > 70 ? 'var(--lime)' : qW > 40 ? 'var(--fire)' : 'var(--rose)';
+            const fc = v => (v === null || v === undefined) ? '—' : parseFloat(v).toFixed(5);
+
+            body.innerHTML = `
+    <div class="loc-stop">${loc.stop_name || '—'}</div>
+    <div class="loc-coords"><span>LAT ${fc(loc.gps_lat)}</span><span>LON ${fc(loc.gps_lon)}</span></div>
+    <div class="loc-grid">
+      <div class="loc-cell"><div class="loc-cell-l">Stop Lat</div><div class="loc-cell-v">${fc(loc.stop_lat)}</div></div>
+      <div class="loc-cell"><div class="loc-cell-l">Stop Lon</div><div class="loc-cell-v">${fc(loc.stop_lon)}</div></div>
+      <div class="loc-cell"><div class="loc-cell-l">City</div><div class="loc-cell-v">${loc.stop_city || '—'}</div></div>
+      <div class="loc-cell"><div class="loc-cell-l">State</div><div class="loc-cell-v">${loc.stop_state || '—'}</div></div>
+    </div>
+    ${q ? `<div>
+      <div class="loc-cell-l" style="margin-bottom:5px">IMAGE QUALITY</div>
+      <div class="qual-row">
+        <div class="qual-n" style="color:${qC}">${q}%</div>
+        <div class="qual-bar"><div class="qual-fill" style="width:${qW}%;background:${qC}"></div></div>
+      </div>
+    </div>` : ''}`;
+        }
+
+        /* ════════════════════════════════════════════════════
+           RIGHT PANEL
+        ════════════════════════════════════════════════════ */
+        function rpSwitch(mode, el) {
+            _rpMode = mode;
+            document.querySelectorAll('.rp-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            renderRP();
+        }
+
+        let _rpData = { valid: [], unpaid: [], invalid: [], notuni: [] };
+
+        function renderRP() {
+            const list = document.getElementById('rp-list');
+            const items = _rpData[_rpMode] || [];
+            if (!items.length) {
+                list.innerHTML = `<div class="rp-empty"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><span>No events</span></div>`;
+                return;
+            }
+            list.innerHTML = items.slice(0, 100).map(s => {
+                const loc = s.location || {};
+                const busTag = s.bus_id ? `<span class="sp-bus">Bus #${s.bus_id}</span>` : '';
+                let name = s.student_name || s.gr_no || 'Unknown';
+                let sub = s.gr_no ? 'GR: ' + s.gr_no : '';
+                if (s.department) sub += (sub ? ' · ' : '') + s.department;
+
+                let badge = '';
+                if (_rpMode === 'invalid') {
+                    const rc = s.reason === 'not_in_db' ? 'rt-nodb' : 'rt-nobus';
+                    const rl = s.reason === 'not_in_db' ? 'NOT IN DB' : 'NO BUS';
+                    badge = `<span class="rtag ${rc}">${rl}</span>`;
+                } else if (_rpMode === 'notuni') {
+                    const cPct = s.confidence ? Math.round(s.confidence * 100) : 0;
+                    name = 'Unknown Person';
+                    sub = `Best match: ${s.candidate_gr || 'none'} (${cPct}%)`;
+                }
+
+                const pillMap = {
+                    valid: '<span class="pill pill-g" style="font-size:9px;padding:2px 6px">GRANTED</span>',
+                    unpaid: '<span class="pill pill-a" style="font-size:9px;padding:2px 6px">UNPAID</span>',
+                    invalid: badge,
+                    notuni: '<span class="pill pill-c" style="font-size:9px;padding:2px 6px">UNKNOWN</span>',
+                };
+
+                return `<div class="sp-row">
+      ${av(s.captured_b64, name)}
+      <div class="sp-body">
+        <div class="sp-name">${name}</div>
+        <div class="sp-sub">${sub}</div>
+      </div>
+      <div class="sp-right">
+        <div class="sp-ts">${fmtTs(s.timestamp)}</div>
+        <div class="sp-bus">${loc.stop_name || ''}</div>
+        ${pillMap[_rpMode] || ''}
+        ${busTag}
+      </div>
+    </div>`;
+            }).join('');
+        }
+
+        /* ════════════════════════════════════════════════════
+           GLOBAL STATS
+        ════════════════════════════════════════════════════ */
+        function updateGlobalStats(d) {
+            if (!d || d.is_idle || !d.timestamp || d.timestamp === _lastStatTs) return;
+            _lastStatTs = d.timestamp;
+            const s = d.summary || {};
+            G.valid += s.valid_with_bus || 0;
+            G.unpaid += s.unpaid || 0;
+            G.invalid += s.invalid || 0;
+            G.notuni += s.not_uni || 0;
+            document.getElementById('gs-valid').textContent = G.valid;
+            document.getElementById('gs-unpaid').textContent = G.unpaid;
+            document.getElementById('gs-invalid').textContent = G.invalid;
+            document.getElementById('gs-notuni').textContent = G.notuni;
+        }
+
+        /* ════════════════════════════════════════════════════
+           POLLING FUNCTIONS
+        ════════════════════════════════════════════════════ */
+        async function pollBuses() {
+            try {
+                const r = await fetch(`${BASE}/buses`);
+                setOnline(r.ok);
+                if (!r.ok) return;
+                const d = await r.json();
+                _allBuses = d.buses || [];
+                renderBusList(_allBuses, document.getElementById('bus-search').value);
+            } catch { setOnline(false); }
+        }
+
+        async function pollScan() {
+            try {
+                const r = await fetch(`${BASE}/upload_status`);
+                if (!r.ok) return;
+                const d = await r.json();
+                updateGlobalStats(d);
+                // Only render scan if matches selected bus or no bus selected
+                if (!_selectedBus || String(d.bus_id) === _selectedBus) {
+                    renderScan(d);
+                }
+                if (d.location && (!_selectedBus || String(d.bus_id) === _selectedBus)) {
+                    renderGPS(d.location);
+                }
+            } catch { }
+        }
+
+        async function pollValid() {
+            try {
+                const r = await fetch(`${BASE}/valid_students?limit=100`);
+                if (!r.ok) return;
+                const d = await r.json();
+                _rpData.valid = d.students || [];
+                document.getElementById('rp-valid-cnt').textContent = _rpData.valid.length;
+                if (_rpMode === 'valid') renderRP();
+            } catch { }
+        }
+
+        async function pollUnpaid() {
+            try {
+                const r = await fetch(`${BASE}/unpaid_students`);
+                if (!r.ok) return;
+                const d = await r.json();
+                _rpData.unpaid = d.unpaid_students || [];
+                document.getElementById('rp-unpaid-cnt').textContent = _rpData.unpaid.length;
+                if (_rpMode === 'unpaid') renderRP();
+            } catch { }
+        }
+
+        async function pollInvalid() {
+            try {
+                const r = await fetch(`${BASE}/invalid_alerts?limit=100`);
+                if (!r.ok) return;
+                const d = await r.json();
+                _rpData.invalid = d.alerts || [];
+                document.getElementById('rp-invalid-cnt').textContent = _rpData.invalid.length;
+                if (_rpMode === 'invalid') renderRP();
+            } catch { }
+        }
+
+        async function pollNotUni() {
+            try {
+                const r = await fetch(`${BASE}/not_uni_student?limit=100`);
+                if (!r.ok) return;
+                const d = await r.json();
+                _rpData.notuni = d.not_uni_students || [];
+                document.getElementById('rp-notuni-cnt').textContent = _rpData.notuni.length;
+                if (_rpMode === 'notuni') renderRP();
+            } catch { }
+        }
+
+        /* ════════════════════════════════════════════════════
+           SSE — real-time push
+        ════════════════════════════════════════════════════ */
+        function connectSSE() {
+            const evtSrc = new EventSource(`${BASE}/events`);
+            evtSrc.addEventListener('scan', () => { pollScan(); pollBuses(); });
+            evtSrc.addEventListener('valid', () => pollValid());
+            evtSrc.addEventListener('unpaid', () => pollUnpaid());
+            evtSrc.addEventListener('invalid', () => pollInvalid());
+            evtSrc.addEventListener('not_uni', () => pollNotUni());
+            evtSrc.onerror = () => setTimeout(connectSSE, 5000);
+        }
+
+        /* ════════════════════════════════════════════════════
+           TAB SWITCH (main panel)
+        ════════════════════════════════════════════════════ */
+        function switchTab(tab) {
+            // Currently only 'scan' tab - expandable
+        }
+
+        /* ════════════════════════════════════════════════════
+           INIT
+        ════════════════════════════════════════════════════ */
+        pollBuses();
+        pollScan();
+        pollValid();
+        pollUnpaid();
+        pollInvalid();
+        pollNotUni();
+        connectSSE();
+
+        setInterval(pollBuses, 5000);
+        setInterval(pollScan, 2000);
+        setInterval(pollValid, 6000);
+        setInterval(pollUnpaid, 6000);
+        setInterval(pollInvalid, 7000);
+        setInterval(pollNotUni, 7000);
+    </script>
+</body>
+
+</html>

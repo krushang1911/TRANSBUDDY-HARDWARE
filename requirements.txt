@@ -1,0 +1,13 @@
+# NOTE: Do NOT use this file inside the Dockerfile with "pip install -r requirements.txt"
+# Packages are installed in strict order inside the Dockerfile RUN command.
+# This file is for local development only.
+flask==3.0.3
+gunicorn==21.2.0
+numpy==1.26.4
+onnxruntime==1.19.2
+opencv-python-headless==4.8.1.78
+insightface==0.7.3
+mysql-connector-python==8.3.0
+requests==2.31.0
+Pillow==10.3.0
+huggingface_hub>=0.20.0

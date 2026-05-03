@@ -1,0 +1,21 @@
+{
+  "bus_id": "BUS_001",
+  "face_count": 1,
+  "faces": [
+    {
+      "confidence": 0.0,
+      "face_index": 0,
+      "gr_no": null,
+      "status": "invalid"
+    }
+  ],
+  "location": "Stop_A",
+  "status": "success",
+  "summary": {
+    "invalid": 1,
+    "not_enrolled": 0,
+    "valid_with_bus": 0,
+    "valid_without_bus": 0
+  },
+  "timestamp": "2026-04-16T11:00:18.616236"
+}
