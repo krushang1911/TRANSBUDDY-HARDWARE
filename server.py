@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 TransBuddy Bus Face Verification Server — v11.0.0
 Marwadi University
