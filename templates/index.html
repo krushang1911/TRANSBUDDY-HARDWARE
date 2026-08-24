@@ -588,7 +588,7 @@ async function pollScan() {
 
 function updateStats(d) {
   if (!d || d.is_idle || !d.timestamp) return;
-  if (d.timestamp === _lastStatsTs) return; // already processed this scan
+  if (d.timestamp === _lastStatsTs) return; 
   _lastStatsTs = d.timestamp;
 
   const s = d.summary || {};
